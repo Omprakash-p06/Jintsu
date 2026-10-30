@@ -1,7 +1,14 @@
-# Reality Check AI (`jintru`) — Verifiable Claim Verification System
+# [SUPERSEDED] Reality Check AI (`jintru`) — Verifiable Claim Verification System (Pre-Convergence Draft)
+
+> [!WARNING]
+> **SUPERSEDED DOCUMENT — DO NOT USE AS AN IMPLEMENTATION BASELINE**  
+> This draft contains the pre-convergence architectural proposal (multi-proposition decomposition, double serialized external LLM calls, custom socket-level SSRF networking, MinHash shingling, and 4-table relational database with Alembic) that was audited and rejected during EGM review (`consolidated_review_report.md`).
+> 
+> The sole authoritative, approved design specification is located at:
+> [`docs/designs/jintru_claim_verification.md`](docs/designs/jintru_claim_verification.md)
 
 * **Author:** `jintru` Core Team
-* **Status:** Draft (Detailed Implementation Added)
+* **Status:** Superseded / Historical Archive
 * **Date:** 2026-10-30
 
 --------------------------------------------------------------------------------

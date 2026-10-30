@@ -3,22 +3,24 @@
 **Auditors:** Pragmatic Tech Lead (`egm-implementation-readiness`), Pedantic Technical Quality Auditor (`egm-codebase-details`), Technical Copy Editor (`egm-style`)  
 **Standard Applied:** [Implementation Readiness Standard](file:///home/omprakash/.gemini/config/plugins/egm/resources/document_standards/implementation-readiness-standard.md) (The Zero-Decision Rule)  
 **Target Document:** [`docs/designs/jintru_claim_verification.md`](file:///home/omprakash/Documents/jintru/docs/designs/jintru_claim_verification.md)  
-**Target Scope:** `DetailedRange` (Lines 438–518: Detailed Implementation Plan & Verification Plan)  
+**Target Scope:** `DetailedRange` (Lines 378–769: Detailed Implementation Plan & Verification Plan)  
 **Reference Documents:** [`docs/designs/concepts_brief.md`](file:///home/omprakash/Documents/jintru/docs/designs/concepts_brief.md), [`docs/specification.md`](file:///home/omprakash/Documents/jintru/docs/specification.md)  
 **Stage:** Stage 9 (Detailed Scope Review)  
-**Overall Verdict:** 🔴 **FAIL (NOT READY FOR IMPLEMENTATION UNDER ZERO-DECISION RULE)**
+**Overall Verdict:** 🟡 **REVISION REQUIRED (PASS WITH SURGICAL FIXES: 3 BLOCKERS, 6 MAJORS, 5 NITS)**
 
 ---
 
 ## 1. Executive Summary
 
-Under the **Zero-Decision Rule**, an implementation plan passes only if a competent engineer (or fresh AI coding session) unfamiliar with the codebase can execute the plan and produce the correct changes on the first attempt without guessing, asking clarifying questions, or making independent architectural or design choices.
+The revised `Detailed Implementation Plan` (Lines 378–769) represents a major structural upgrade from the original draft. It replaces the flat file inventory with an 8-phase dependency-ordered execution plan complete with explicit data models, database schemas, pipeline orchestration logic, and a verification plan.
 
-The current `Detailed Implementation Plan` (Lines 438–518) fails this standard across three parallel review lenses:
-1. **Unordered Flat File Inventory:** Lines 438–493 present an unordered inventory of one-line file summaries with zero phased execution sequence, no dependency graph, and no incremental build/test milestones.
-2. **Missing Core Services & Scaffolding:** Services featured in the architecture diagram and CUJs (`Conflict Resolver`, `Evidence Gap Diagnoser`, and LLM prompt modules) are completely missing from the backend plan. The frontend plan lists feature components but omits mandatory Vite/TypeScript scaffolding files (`vite.config.ts`, `tsconfig.json`, `index.html`, `App.tsx`, `main.tsx`).
-3. **Broken Runtime Dependencies & Commands:** The plan hard-codes `fastapi==0.162.0` without `pydantic-settings` (crashing FastAPI startup), omits `uvicorn`, references non-existent files (`backend/requirements.txt`, `backend/scripts/check_openapi_drift.py`), and invokes root-level commands (`npx playwright test`) that fail in a monorepo structure.
-4. **Abstract Verification & Evaluation:** Test specifications lack concrete payloads, status codes, and mock assertions. Benchmark instructions call `python evals/run_evals.py` to "satisfy agreed baseline thresholds" without defining numerical pass/fail thresholds.
+However, a pedantic evaluation against actual Python 3.12, SQLite connection behavior, Pydantic v2 semantics, and React 19 tooling revealed **3 Blockers**, **6 Major defects**, and **5 Minor nits** that must be resolved to fulfill the **Zero-Decision Rule**:
+
+1. **Tier 2 Citation Excerpt Provenance Disconnect:** While the verification pipeline specifies Tier 2 substring matching of reasoning statements against cited snippets, `ReasoningStatement` omits the `quoted_excerpt: Optional[str] = None` attribute, and `SourceItem` lacks `relevance: Optional[str] = None` and `exact_quote: Optional[str] = None`. Furthermore, the pipeline does not explicitly merge the LLM's `source_evaluations` into the active `SourceItem` objects prior to executing `validate_citations`.
+2. **SQLite Connection Pragma & JSON Deserialization Vulnerability:** SQLite `PRAGMA busy_timeout = 5000;` and `PRAGMA synchronous = NORMAL;` are connection-scoped; setting them once during `init_db()` does not protect subsequent connections created during API requests. Additionally, `Database.get_verification(id)` returns raw JSON text for JSON columns (`limitations`, `sources`, `reasoning`), which causes Pydantic validation failure when unpacking into `VerificationResponse`.
+3. **Frontend Dependency & Tooling Breakages:** `frontend/package.json` omits mandatory React type packages (`@types/react`, `@types/react-dom`, `@types/node`) and ESLint dependencies, while the verification plan invokes deprecated ESLint syntax (`eslint . --ext ts,tsx`) and broken CLI flags for Playwright and `pip-audit`.
+
+These defects are strictly localized and mechanical. Once updated in `docs/designs/jintru_claim_verification.md`, the plan fully satisfies the Zero-Decision Rule.
 
 ---
 
@@ -26,146 +28,150 @@ The current `Detailed Implementation Plan` (Lines 438–518) fails this standard
 
 | ID | Severity | Lens | Affected Scope | Title / Summary |
 | :--- | :--- | :--- | :--- | :--- |
-| **IR-01** | 🔴 Blocker | Tech Lead | Lines 438–493 | Flat file list lacks phased, dependency-ordered implementation waves |
-| **IR-02** | 🔴 Blocker | Tech Lead | Lines 461–470 | Missing mandatory services: `Conflict Resolver` & `Evidence Gap Diagnoser` |
-| **IR-03** | 🔴 Blocker | Quality Auditor | Line 443 | `pydantic-settings` missing from dependencies (crashes startup on Pydantic v2) |
-| **IR-04** | 🔴 Blocker | Quality Auditor / Copy Editor | Lines 477–485 | Incomplete frontend application skeleton & missing Vite/TypeScript scaffolding |
-| **IR-05** | 🔴 Blocker | Copy Editor / Quality Auditor | Lines 457, 507 | API route contract inconsistency (`POST /export`) & missing drift script declaration |
-| **IR-06** | 🔴 Blocker | Tech Lead | Lines 442–485 | File summaries lack class interfaces, method signatures, inputs, and return types |
-| **IR-07** | 🟡 Major | Quality Auditor | Line 443 | Missing ASGI server (`uvicorn`) in `pyproject.toml` |
-| **IR-08** | 🟡 Major | Quality Auditor / Copy Editor | Lines 443, 504 | Dependency tooling contradiction: `pyproject.toml` vs non-existent `requirements.txt` |
-| **IR-09** | 🟡 Major | Quality Auditor | Lines 452–454 | SQLite async concurrency, missing WAL mode, and foreign key cascade omission |
-| **IR-10** | 🟡 Major | Quality Auditor | Lines 443, 466, 469 | Missing MinHash (`datasketch`) and HTML parsing (`beautifulsoup4`) dependencies |
-| **IR-11** | 🟡 Major | Quality Auditor | Line 447, Lines 285–299 | HTTPX IP-pinning TLS/SNI certificate verification gotcha |
-| **IR-12** | 🟡 Major | Tech Lead / Quality Auditor | Lines 487–488, 499–501 | Abstract test plan lacking test fixtures, boundary values, and mock assertions |
-| **IR-13** | 🟡 Major | Tech Lead / Copy Editor | Lines 489–490, 513 | Undefined benchmark schema and missing numerical CI baseline thresholds |
-| **IR-14** | 🟡 Major | Copy Editor | Line 511 | Frontend Playwright execution context discrepancy (`npx playwright test` vs `npm --prefix frontend`) |
-| **IR-15** | 🟢 Nit | Quality Auditor | Line 443 | Unverified exact FastAPI version pinning (`fastapi==0.162.0`) |
-| **IR-16** | 🟢 Nit | Copy Editor | Line 464 | Unescaped LaTeX math syntax (`$\le 5$`) |
-| **IR-17** | 🟢 Nit | Quality Auditor | Lines 491, 511 | Playwright browser binary installation missing from CI plan |
-| **IR-18** | 🟢 Nit | Copy Editor | Line 517 | Meta boilerplate watermark (`*Drafted with EGM*`) |
+| **IR-01** | 🔴 Blocker | Tech Lead / Quality Auditor | Lines 396–410, 502–520 | `ReasoningStatement` and `SourceItem` lack excerpt fields for Tier 2 citation validation |
+| **IR-02** | 🔴 Blocker | Quality Auditor / Tech Lead | Lines 415–445 | SQLite per-connection pragmas missing and raw JSON text returned by `Database.get_verification` |
+| **IR-03** | 🔴 Blocker | Tech Lead / Copy Editor | Lines 575–598, 735–745 | Broken frontend dependencies in `package.json` and invalid CLI syntax for Playwright / `pip-audit` |
+| **IR-04** | 🟡 Major | Quality Auditor | Lines 450–475 | `SearchProvider.search()` and `ModelProvider.synthesize()` lack subordinate timeout parameters |
+| **IR-05** | 🟡 Major | Quality Auditor / Tech Lead | Lines 500–530 | Pipeline lacks explicit merging of LLM `source_evaluations` into `SourceItem` instances |
+| **IR-06** | 🟡 Major | Quality Auditor | Lines 390–410 | Missing `[build-system]` table and `asyncio_default_fixture_loop_scope` in `pyproject.toml` |
+| **IR-07** | 🟡 Major | Quality Auditor | Lines 385–395 | Missing `USE_MOCK_PROVIDERS: bool = False` configuration toggle in `backend/app/core/config.py` |
+| **IR-08** | 🟡 Major | Tech Lead / Copy Editor | Lines 540–560 | Deprecated FastAPI startup/shutdown events instead of modern `@asynccontextmanager lifespan` |
+| **IR-09** | 🟡 Major | Quality Auditor / Tech Lead | Lines 660–680 | Benchmark schema in Phase 8 lacks explicit ground-truth stance mapping |
+| **IR-10** | 🟢 Nit | Quality Auditor | Lines 505–515 | Naive substring matching in `classify_input` prone to false positives |
+| **IR-11** | 🟢 Nit | Copy Editor | Lines 600–625 | Incomplete color token mapping for 5-way verdict badge in `VerdictCard.tsx` |
+| **IR-12** | 🟢 Nit | Quality Auditor | Lines 390–405 | Missing `semgrep` dev dependency in `pyproject.toml` |
+| **IR-13** | 🟢 Nit | Tech Lead | Lines 610–630 | Missing explicit TypeScript props for frontend UI components |
+| **IR-14** | 🟢 Nit | Copy Editor | Lines 725–769 | Intermediate exit checks lack explicit verification command invocations |
 
 ---
 
-## 3. Detailed Audit Findings
+## 3. Detailed Blocker Analysis
 
-### 🔴 Blockers
+### IR-01: Tier 2 Citation Excerpt Provenance Disconnect
+* **Severity:** 🔴 Blocker
+* **Impact:** Inability to run Tier 2 deterministic citation checks without code guessing or runtime crashes.
+* **Problem:** In Section 3.4 (Lines 230–245), Tier 2 citation validation is defined as verifying that reasoning statements contain exact quotes or verbatim substrings from cited snippets. However:
+  1. `ReasoningStatement` (Lines 400–405) defines only `claim_id: str`, `text: str`, and `citation_source_ids: list[str]`. It lacks `quoted_excerpt: Optional[str] = None`.
+  2. `SourceItem` (Lines 405–410) lacks `relevance: Optional[str] = None` and `exact_quote: Optional[str] = None`.
+  3. `ModelProvider` returns `SynthesisResult` with `source_evaluations: list[SourceEvaluationItem]`, but `VerificationPipeline` does not specify how these evaluations update `SourceItem` before `validate_citations()` executes.
+* **Resolution:** 
+  - Add `quoted_excerpt: Optional[str] = None` to `ReasoningStatement`.
+  - Add `relevance: Optional[str] = None`, `exact_quote: Optional[str] = None`, and `is_quarantined: bool = False` to `SourceItem`.
+  - In `VerificationPipeline`, specify that `pipeline` iterates through `model_result.source_evaluations`, updates matching `SourceItem` instances, assigns `exact_quote` to `ReasoningStatement.quoted_excerpt`, and passes both to `validate_citations(verdict_payload, active_sources)`.
 
-#### IR-01: Flat File List Lacks Phased, Dependency-Ordered Implementation Waves
-* **Reviewer Lens:** Pragmatic Tech Lead (`egm-implementation-readiness`)
-* **Affected Scope:** Lines 438–493 (`Target Files to Create / Modify`)
-* **Discrepancy:** The plan lists target files in a flat categorization grouped by architectural layers (Backend Core, Schemas, Routes, Services, Adapters, Frontend, Tests). There is no execution sequence, no dependency graph, and no incremental phasing. An engineer starting at item 1 cannot compile or test anything until all 23 files are written.
-* **Remediation:** Replace the static file list with an ordered, phased execution plan partitioned into 8 incremental stages, where each stage leaves the repository buildable and testable:
-  - Phase 1: Project Scaffolding & Core Foundations
-  - Phase 2: Data Models & Persistence
-  - Phase 3: External Provider Adapters & Mock Harness
-  - Phase 4: Request Budget & Security Utilities
-  - Phase 5: Pipeline Services
-  - Phase 6: Pipeline Orchestration & API Routes
-  - Phase 7: Frontend Application Shell & Components
-  - Phase 8: End-to-End Tests & CI Benchmark Harness
+### IR-02: SQLite Connection Pragmas & JSON Deserialization
+* **Severity:** 🔴 Blocker
+* **Impact:** High database concurrency failures (`sqlite3.OperationalError: database is locked`) and `pydantic.ValidationError` on every read endpoint.
+* **Problem:** 
+  1. `PRAGMA busy_timeout = 5000;` and `PRAGMA synchronous = NORMAL;` are connection-scoped pragmas in SQLite. Setting them once inside `init_db()` applies only to that temporary connection. Every subsequent connection created in `save_verification()` or `get_verification()` reverts to default SQLite settings (timeout=0, synchronous=FULL).
+  2. In `Database.get_verification(id)`, columns `limitations`, `sources`, and `reasoning` are stored as serialized JSON strings. The method returns `dict(row)` directly, causing Pydantic's `VerificationResponse(**row)` to crash because it expects `list[str]`, `list[SourceItem]`, and `list[ReasoningStatement]`, not unparsed strings.
+* **Resolution:**
+  - Implement a dedicated connection context manager:
+    ```python
+    @asynccontextmanager
+    async def _connect(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("PRAGMA busy_timeout = 5000;")
+            await db.execute("PRAGMA synchronous = NORMAL;")
+            db.row_factory = aiosqlite.Row
+            yield db
+    ```
+  - In `get_verification()`, parse JSON columns before returning:
+    ```python
+    data = dict(row)
+    data["limitations"] = json.loads(data["limitations"])
+    data["sources"] = json.loads(data["sources"])
+    data["reasoning"] = json.loads(data["reasoning"])
+    return data
+    ```
 
-#### IR-02: Missing Mandatory Core Pipeline Services (`Conflict Resolver` & `Evidence Gap Diagnoser`)
-* **Reviewer Lens:** Pragmatic Tech Lead (`egm-implementation-readiness`)
-* **Affected Scope:** Lines 461–470 (`Pipeline Services & Logic`), Lines 87, 96, 147, 183–186
-* **Discrepancy:** Section 1 flowchart specifies `ConflictMod[Conflict & Disagreement Resolver]`, CUJ 2 invokes the Conflict Resolver to assign `mixed`, and CUJ 3 invokes the `Evidence Gap Diagnoser`. Neither service is listed under `backend/app/services/`.
-* **Remediation:** Explicitly declare `backend/app/services/conflict.py` (with class `ConflictResolver` and method `resolve_conflicts`) and `backend/app/services/gap_diagnoser.py` (with class `EvidenceGapDiagnoser` and method `diagnose_gap`), or explicitly specify their inlined locations if unified per Intermediate Zoom Out.
-
-#### IR-03: `pydantic-settings` Missing from Dependencies
-* **Reviewer Lens:** Pedantic Technical Quality Auditor (`egm-codebase-details`)
-* **Affected Scope:** Line 443 (`backend/pyproject.toml`), Line 445 (`backend/app/core/config.py`)
-* **Discrepancy:** In Pydantic v2 (`>=2.0`), `BaseSettings` and `.env` parsing were split into an independent library: `pydantic-settings`. Calling `from pydantic_settings import BaseSettings` without `pydantic-settings` installed raises an immediate `ModuleNotFoundError: No module named 'pydantic_settings'`, preventing FastAPI from starting.
-* **Remediation:** Add `pydantic-settings>=2.5` to `backend/pyproject.toml`.
-
-#### IR-04: Missing Critical Frontend Scaffolding, TypeScript, and Build Files
-* **Reviewer Lens:** Pedantic Technical Quality Auditor (`egm-codebase-details`) & Copy Editor (`egm-style`)
-* **Affected Scope:** Lines 477–485 (`Frontend Application`), Lines 498, 501, 511
-* **Discrepancy:** The plan lists `frontend/package.json` and five isolated React components, but omits:
-  - `frontend/index.html` (Vite SPA HTML entry point)
-  - `frontend/vite.config.ts` (Build config, React plugin, and `/api/v1` proxy)
-  - `frontend/tsconfig.json` & `frontend/tsconfig.node.json` (Required for `npm run typecheck`)
-  - `frontend/src/main.tsx` & `frontend/src/App.tsx` (Root React DOM mount)
-  - `frontend/src/index.css` (Tailwind CSS v4 `@import "tailwindcss";` entry point)
-  - `frontend/playwright.config.ts` (Required for Playwright E2E tests)
-* **Remediation:** Declare all 7 missing frontend scaffolding files in the manifest.
-
-#### IR-05: Route Contract Inconsistency & Missing Drift Script Declaration
-* **Reviewer Lens:** Technical Copy Editor (`egm-style`) & Quality Auditor (`egm-codebase-details`)
-* **Affected Scope:** Line 457 (`backend/app/api/routes/verifications.py`), Line 507
-* **Discrepancy:** Line 457 lists `POST /export` in `verifications.py`, dropping the canonical prefix `/api/v1` and the required resource ID parameter `{id}` (specified in Section 8 as `POST /api/v1/verifications/{id}/export`). Furthermore, Line 507 mandates executing `python backend/scripts/check_openapi_drift.py`, but this script is never declared in the file manifest.
-* **Remediation:** Standardize route paths to `POST /api/v1/verifications/{id}/export` (or prune if cutting export per Intermediate Zoom Out), and declare `backend/scripts/check_openapi_drift.py` under a dedicated `Tooling & Automation Scripts` section.
-
-#### IR-06: File Summaries Lack Method Signatures, Types, and Concrete Contracts
-* **Reviewer Lens:** Pragmatic Tech Lead (`egm-implementation-readiness`)
-* **Affected Scope:** Lines 442–485
-* **Discrepancy:** The file descriptions are descriptive one-liners without class names, function signatures, input parameters, or return types. An implementer must invent all interfaces.
-* **Remediation:** Provide concrete Python typing and abstract base classes for all provider adapters (`SearchProvider`, `ModelProvider`), pipeline services (`SufficiencyGate`, `CitationValidator`), and request handlers.
-
----
-
-### 🟡 Majors
-
-#### IR-07: Missing ASGI Server (`uvicorn`) in `backend/pyproject.toml`
-* **Affected Scope:** Line 443
-* **Discrepancy:** FastAPI does not include an ASGI server. Without `uvicorn`, the backend cannot be launched locally (`uvicorn app.main:app`) or spawned in CI test suites.
-* **Remediation:** Add `uvicorn[standard]>=0.30` to `backend/pyproject.toml`.
-
-#### IR-08: `pip-audit` Targets Non-Existent `requirements.txt`
-* **Affected Scope:** Line 443 vs Line 504
-* **Discrepancy:** Line 504 instructs `pip-audit -r backend/requirements.txt`, but packaging uses `backend/pyproject.toml`. No `requirements.txt` exists.
-* **Remediation:** Update command to `pip-audit --project backend/`.
-
-#### IR-09: SQLite Async Concurrency, Missing WAL Mode, and Foreign Key Cascade Omission
-* **Affected Scope:** Lines 452–454, Lines 362, 434
-* **Discrepancy:** SQLite in async mode (`aiosqlite`) defaults to disabled foreign keys (causing cascading deletes to orphan child records) and `journal_mode=DELETE` (locking the DB file during concurrent writes). Furthermore, default Alembic `env.py` is synchronous and crashes on `sqlite+aiosqlite://`.
-* **Remediation:** Explicitly mandate that `backend/app/db/session.py` register an engine event listener setting `PRAGMA foreign_keys=ON;`, `PRAGMA journal_mode=WAL;`, and `PRAGMA busy_timeout=5000;`, and specify that Alembic use the async template.
-
-#### IR-10: Missing MinHash and HTML Text Extraction Dependencies
-* **Affected Scope:** Line 443, Line 466, Line 469
-* **Discrepancy:** The plan specifies 64-bit MinHash text fingerprinting (Line 466) and full-page HTML text extraction (Line 469), but `backend/pyproject.toml` omits `datasketch` and HTML extraction libraries (`beautifulsoup4` or `selectolax`).
-* **Remediation:** Add `datasketch>=1.6` and `beautifulsoup4>=4.12` to `pyproject.toml` (or adopt the Skeptical Architect's recommendation to replace MinHash with token-set Jaccard and drop raw HTML extraction in favor of Brave snippets).
-
-#### IR-11: HTTPX IP-Pinning TLS/SNI Host Mismatch Gotcha
-* **Affected Scope:** Line 447, Lines 285–299
-* **Discrepancy:** Connecting directly to an IP over HTTPS (e.g., `http://198.51.100.24:443/article` with `Host: example.com`) causes Python's `ssl` module to validate the certificate against the IP address rather than `example.com`, throwing `SSLCertVerificationError`.
-* **Remediation:** Detail the SSL context `server_hostname` override in `backend/app/core/security.py`, or adopt the Skeptical Architect's recommendation to eliminate raw web page fetching entirely.
-
-#### IR-12: Abstract Test Plan Lacking Fixtures and Assertions
-* **Affected Scope:** Lines 487–488, 499–501
-* **Discrepancy:** Unit test descriptions list covered areas without providing concrete test case names, mock payloads, or expected assertion values.
-* **Remediation:** Detail specific test cases for SSRF IP blocking, budget pre-reservation exhaustion, normalized citation matching, and API endpoint integration.
-
-#### IR-13: Undefined Benchmark Schema and Missing Numerical CI Baseline Thresholds
-* **Affected Scope:** Lines 489–490, 513
-* **Discrepancy:** Line 513 mandates verifying that reasoning and retrieval "satisfy agreed baseline thresholds", but no numerical thresholds are defined anywhere in the plan.
-* **Remediation:** Define the exact JSON schema for `evals/cases.jsonl` and document numerical CI pass criteria: Citation Entailment Precision $\ge 90\%$, False-Support Rate $\le 5\%$, Counterevidence Recall $\ge 80\%$.
-
-#### IR-14: Frontend Playwright Execution Context Discrepancy
-* **Affected Scope:** Line 511
-* **Discrepancy:** Frontend commands use `npm --prefix frontend run <cmd>`, but Line 511 invokes `npx playwright test` directly from root, failing to locate `frontend/tests/e2e/`.
-* **Remediation:** Update command to `npm --prefix frontend run test:e2e -- --project=chromium,firefox`.
+### IR-03: Broken Frontend Dependencies & CLI Syntax
+* **Severity:** 🔴 Blocker
+* **Impact:** Frontend build failure (`npm run build` fails with missing React types) and CI pipeline termination due to invalid command flags.
+* **Problem:**
+  1. `frontend/package.json` (Phase 6) includes `react` and `react-dom` in `dependencies`, but completely omits `@types/react`, `@types/react-dom`, `@types/node`, and `@vitejs/plugin-react` in `devDependencies`. TypeScript compilation fails immediately.
+  2. The script `"lint": "eslint . --ext ts,tsx"` uses the `--ext` flag, which was removed in ESLint 9+ flat config.
+  3. In Section 5 (Verification Plan, Lines 735–745):
+     - `npx playwright test --project=chromium,firefox` is invalid syntax in Playwright; multiple projects must be passed as `--project=chromium --project=firefox`.
+     - `pip-audit --project backend/` is invalid syntax; `pip-audit` does not take a `--project` flag when pointing to a directory.
+* **Resolution:**
+  - Update `frontend/package.json` to include `@types/react`, `@types/react-dom`, `@types/node`, `@vitejs/plugin-react`, `eslint`, and modern React eslint plugins. Change lint script to `"lint": "eslint src/"`.
+  - Fix Playwright CLI call to `npx playwright test --project=chromium --project=firefox`.
+  - Fix `pip-audit` CLI call to `pip-audit backend/` (or `pip-audit pyproject.toml`).
 
 ---
 
-### 🟢 Nits
+## 4. Detailed Major Findings Analysis
 
-#### IR-15: Exact FastAPI Version Pinning `fastapi==0.162.0`
-* **Affected Scope:** Line 443
-* **Discrepancy:** Hard-pins an unverified version `0.162.0` while other packages use ranges.
-* **Remediation:** Use `fastapi>=0.115.0,<1.0.0`.
+### IR-04: Subordinate Timeout Parameters on Providers
+* **Severity:** 🟡 Major
+* **Problem:** `SearchProvider.search()` and `ModelProvider.synthesize()` omit a `timeout` argument in their abstract base class signatures. The orchestrator cannot enforce per-stage sub-deadlines (e.g. 3.0s for Brave search, 4.0s for LLM synthesis) through the provider contract.
+* **Resolution:** Update signatures in `providers/base.py`:
+  ```python
+  async def search(self, query: str, count: int = 5, timeout: float = 3.0) -> list[SourceItem]: ...
+  async def synthesize(self, claim: str, sources: list[SourceItem], timeout: float = 4.0) -> SynthesisResult: ...
+  ```
 
-#### IR-16: Unescaped LaTeX Math Syntax
-* **Affected Scope:** Line 464
-* **Discrepancy:** Uses raw LaTeX `$\le 5$` in plain markdown.
-* **Remediation:** Replace with Unicode `≤ 5`.
+### IR-05: Missing Stance Mapping & Reconciliation in Pipeline
+* **Severity:** 🟡 Major
+* **Problem:** Phase 4 describes `apply_verdict_policy()` taking `sources` and `model_result`. However, `apply_verdict_policy()` relies on each `SourceItem.stance` being populated to check the 2-domain corroboration rule. In the synthesis schema, stances are returned in `model_result.source_evaluations`.
+* **Resolution:** Explicitly document the reconciliation loop in `VerificationPipeline.verify()`:
+  ```python
+  eval_map = {e.source_id: e for e in model_result.source_evaluations}
+  for s in sources:
+      if s.id in eval_map:
+          s.stance = eval_map[s.id].stance
+          s.relevance = eval_map[s.id].relevance
+          s.exact_quote = eval_map[s.id].exact_quote
+  ```
 
-#### IR-17: Playwright Browser Binary Installation Missing from CI Plan
-* **Affected Scope:** Lines 491, 511
-* **Discrepancy:** Running Playwright tests without installing browser binaries fails in fresh environments.
-* **Remediation:** Add `npx playwright install --with-deps chromium firefox` to the setup step.
+### IR-06: Missing `[build-system]` Table and Pytest Asyncio Configuration
+* **Severity:** 🟡 Major
+* **Problem:** `pyproject.toml` in Phase 1 omits `[build-system]`, causing `pip install -e .` to fail. It also omits `asyncio_default_fixture_loop_scope = "function"`, producing warnings or failures in pytest-asyncio 0.24+.
+* **Resolution:** Add standard `hatchling` build system table and configure pytest asyncio settings in `pyproject.toml`.
 
-#### IR-18: Meta Boilerplate Watermark Fluff
-* **Affected Scope:** Line 517
-* **Discrepancy:** Trailing `*Drafted with EGM*` watermark adds no technical value.
-* **Remediation:** Delete line 517.
+### IR-07: Missing `USE_MOCK_PROVIDERS` Configuration Toggle
+* **Severity:** 🟡 Major
+* **Problem:** Test suites and offline developer environments require running without live API keys. While mock providers are defined in Phase 3, `backend/app/core/config.py` omits the `USE_MOCK_PROVIDERS: bool = False` configuration flag.
+* **Resolution:** Add `USE_MOCK_PROVIDERS: bool = False` to `Settings` in `config.py`.
 
+### IR-08: Modern FastAPI Lifespan Handler
+* **Severity:** 🟡 Major
+* **Problem:** FastAPI deprecated `@app.on_event("startup")` and `@app.on_event("shutdown")`.
+* **Resolution:** Use `@asynccontextmanager async def lifespan(app: FastAPI)` in `main.py` to initialize the database and shut down HTTPX connection pools cleanly.
+
+### IR-09: Curated Offline Benchmark Dataset Schema
+* **Severity:** 🟡 Major
+* **Problem:** Phase 8 specifies running `evals/run_benchmarks.py` across 25 curated claims, but does not provide the concrete schema for `evals/curated_claims.json`.
+* **Resolution:** Define benchmark dataset schema:
+  ```json
+  [
+    {
+      "id": "claim_001",
+      "claim": "Atmospheric CO2 exceeded 425 ppm annual mean globally in 2024.",
+      "expected_verdict": "Refuted",
+      "expected_stance_map": {"src_1": "refuting", "src_2": "supporting"}
+    }
+  ]
+  ```
+
+---
+
+## 5. Phase-by-Phase Readiness Scorecard
+
+| Phase | Title | Complexity | Ambiguity | Readiness Status | Action Required |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Phase 1** | Project Setup & Contracts | Low | Low | 🟡 Fix Required | Add `quoted_excerpt` to `ReasoningStatement`, `relevance`/`exact_quote` to `SourceItem`, `[build-system]` and `semgrep` to `pyproject.toml`. |
+| **Phase 2** | Database & Persistence | Low | Low | 🟡 Fix Required | Add `_connect()` context manager with per-connection PRAGMAs and parse JSON in `get_verification()`. |
+| **Phase 3** | Provider Adapters & Mocks | Medium | Low | 🟡 Fix Required | Add `timeout` parameters to `SearchProvider.search()` and `ModelProvider.synthesize()`. |
+| **Phase 4** | Verification Orchestration | High | Low | 🟡 Fix Required | Add explicit stance mapping loop and regex word boundaries in `classify_input()`. |
+| **Phase 5** | FastAPI Application & Endpoints | Medium | Low | 🟡 Fix Required | Use modern `lifespan` context manager and wire error handlers. |
+| **Phase 6** | Frontend Workbench UI | High | Low | 🟡 Fix Required | Add React types and ESLint tooling to `package.json`, fix lint script. |
+| **Phase 7** | Verification Suite & CI Automation | Medium | Low | 🟡 Fix Required | Fix CLI syntax for Playwright and `pip-audit`. |
+| **Phase 8** | Offline Evaluation Benchmark | Low | Low | 🟡 Fix Required | Specify benchmark schema and citation entailment scoring formula. |
+
+---
+
+## 6. Implementation Readiness Conclusion
+
+Under the Zero-Decision Rule, `docs/designs/jintru_claim_verification.md` is approved for implementation subject to applying the 3 Blockers and 6 Majors identified in this report. No architectural redesign is necessary; the required updates consist entirely of explicit Pydantic attributes, SQLite connection parameters, frontend dependency entries, and corrected CLI invocations.

@@ -2,98 +2,112 @@
 
 **Auditor:** Skeptical Architect (Zoom Out Goldfish)  
 **Standard Applied:** [Zoom Out Standard](file:///home/omprakash/.gemini/config/plugins/egm/resources/document_standards/zoom-out-standard.md)  
-**Target Document:** [`docs/designs/jintru_claim_verification.md`](file:///home/omprakash/Documents/jintru/docs/designs/jintru_claim_verification.md)  
+**Target Document:** [`docs/designs/jintru_claim_verification.md`](file:///home/omprakash/Documents/jintru/docs/designs/jintru_claim_verification.md) (770 lines)  
 **Reference Docs:** [`docs/designs/concepts_brief.md`](file:///home/omprakash/Documents/jintru/docs/designs/concepts_brief.md), [`docs/specification.md`](file:///home/omprakash/Documents/jintru/docs/specification.md)  
-**Mode:** REVIEW  
+**Mode:** REVIEW (Stage 5 — Initial Zoom Out Protocol Audit)  
+**Review Verdict:** 🟢 **PASS (0 Blockers, 0 Majors, 3 Nits)**
 
 ---
 
 ### Executive Summary
 
-The design document outlines a thoughtful and research-backed vision for dialectical claim verification. However, from a high-altitude architectural and simplicity perspective, the proposal suffers from premature complexity, speculative YAGNI scope creep, and an unfeasible latency model.
+A comprehensive 30,000-foot architectural review was conducted on the revised master design document `docs/designs/jintru_claim_verification.md` against the [Zoom Out Standard](file:///home/omprakash/.gemini/config/plugins/egm/resources/document_standards/zoom-out-standard.md) and the project constraints established in `docs/designs/concepts_brief.md` and `docs/specification.md`.
 
-Specifically, it attempts to shoehorn two sequential external LLM round-trips, compound multi-proposition claim decomposition, custom raw socket-level SSRF networking, and an over-normalized 4-table relational database with migrations into an initial single-user vertical slice bounded by an 8.0-second synchronous SLA.
+The revised architecture represents an exemplary model of high-altitude simplicity, root-cause problem focus, and strict YAGNI adherence. All previous critical architectural flaws—specifically the unviable serialization of two remote LLM round-trips inside an 8.0s synchronous SLA, the combinatorial complexity of compound claim decomposition, the fragile userland socket-level SSRF transport, and the over-normalized 4-table relational database—have been decisively eliminated.
 
----
+The architecture strictly adheres to the converged Milestone 1 vertical slice:
+1. **Single Factual Claim Input:** Bound strictly to $\le 500$ characters; proposition carving is cleanly deferred to Phase 2 (NG-1).
+2. **Sequential Two-Stage Retrieval:** At most 1 query in Stage 1 and at most 1 targeted counter-query in Stage 2 (triggered only when evidence is disputed and remaining time is $\ge 3.5\text{s}$), naturally protecting provider rate limits without token-bucket bloat.
+3. **Single Structured Synthesis LLM Round-Trip:** Gate A deterministic screening short-circuits subjective claims, future predictions, and empty searches with 0 LLM calls; when usable evidence exists, a single structured LLM call synthesizes the verdict with an enforced $\ge 1.5\text{s}$ execution window.
+4. **Snippet-First Network Boundary:** Ingestion is restricted to search provider snippets and LLM context summaries, eliminating raw web page scraping and architectural SSRF vectors entirely.
+5. **Flat SQLite Persistence:** A single `verifications` table with structured JSON columns running in WAL mode with a 5,000ms busy timeout and backoff retries provides bulletproof local persistence without ORM/migration overhead.
+6. **Robust Implementation Phasing:** An 8-phase zero-decision build sequence replaces the previous flat file inventory, complete with concrete Pydantic schemas, database wrapper code, and testable exit checks.
 
-### 1. Blocker Findings
-
-#### Finding 1: Double External LLM Round-Trips Violates the 8.0s Synchronous SLA
-* **Severity:** **Blocker**
-* **Affected Scope:** Section 1 (High-Level System Architecture, lines 142–152), Section 4 (Request Budget, lines 237–243), Non-Functional Requirements (lines 412–415).
-* **Simplicity Rationale:** 
-  The architecture splits model inference into two distinct sequential calls to the external Meta Model API within the same synchronous request:
-  1. `Gate B: Model Semantic Assessment` (budgeted at 1.5s)
-  2. `Verdict Synthesizer` (budgeted at 1.0s)
-
-  In real-world conditions over public networks, an external LLM request with payload transmission, Time-To-First-Byte (TTFB), and token generation rarely completes reliably within 1.0–1.5s, especially when parsing structured schemas or emitting detailed multi-point rationales. 
-  
-  Furthermore, line 248 enforces that if remaining time is < 1.5s before synthesis, the synthesis call will be skipped. If search (budgeted at 2.5s) and page fetches (budgeted at 2.0s) experience normal network jitter, the system will routinely abort synthesis and fail the user journey. Forcing two serialized LLM calls over an external network into an 8.0s synchronous web request is an architectural dead-end.
-* **Simpler Alternative:**
-  Unify the assessment and verdict generation into a single structured LLM pass (where the model outputs both passage relationships and the synthesized verdict in one structured JSON response), OR utilize deterministic/heuristic filtering for Gate B and reserve the sole LLM round-trip for grounded verdict synthesis.
+With **0 Blockers** and **0 Majors**, the document earns an unequivocal **PASS** verdict.
 
 ---
 
-### 2. Major Findings
+### Master Review Checklist (Zoom Out Standard)
 
-#### Finding 2: Compound Claim Decomposition (<= 5 Propositions) in Milestone 1
-* **Severity:** **Major**
-* **Affected Scope:** Section Goals (G-1, line 31), Section 1 (High-Level Architecture, line 128), Section 7 (Schema Design, lines 318–325), Open Questions (OQ-2, line 58).
-* **Simplicity Rationale:**
-  The Concepts Brief explicitly defines the first milestone as a vertical slice: *"1. Submit one factual claim via web workbench."* 
-  The design document expands this into decomposing compound assertions into up to 5 atomic claims, planning up to 10 distinct queries, pre-reserving 12 attempts, and managing per-claim coverage. Introducing multi-claim NLP decomposition, combinatorial search fan-out, and cross-proposition evidence pooling before validating the end-to-end single-claim flow violates YAGNI and guarantees deadline overruns.
-* **Simpler Alternative:**
-  Scope the initial release strictly to verifying single factual assertions (1 atomic claim). Defer compound proposition decomposition and multi-claim aggregation to Phase 2.
-
-#### Finding 3: Bespoke Raw Socket HTTP Transport vs. Leveraging Search Snippets
-* **Severity:** **Major**
-* **Affected Scope:** Section 6 (Network Boundary & SSRF Defense Implementation, lines 283–300), Section 1 (lines 132–136, 152, 226).
-* **Simplicity Rationale:**
-  The design commits to fetching up to 5 arbitrary external HTML web pages, requiring the team to build a custom HTTPX transport featuring manual pre-socket DNS resolution, direct IP socket pinning, Host/TLS SNI header rewrites, and manual redirect interceptors. Writing low-level networking primitives in userland Python to handle DNS rebinding, TLS certificate validation against IP destinations, and redirect chains is notoriously complex and error-prone. More critically, fetching 5 arbitrary third-party web pages during a synchronous 8.0s request is unnecessary: the Brave Search API already returns snippets, and Brave's LLM Context endpoint returns cleaned text without requiring the backend to crawl untrusted third-party origins directly.
-* **Simpler Alternative:**
-  For the initial vertical slice, rely on search provider snippets and/or the Brave LLM Context endpoint. Eliminate raw web page fetching and the bespoke socket-level HTTP transport. If arbitrary URL fetching is ever required in a later phase, route through a dedicated forward egress proxy rather than rolling custom TLS socket-pinning code.
-
-#### Finding 4: YAGNI Scope Creep: PDF Report Export and Client Settings API
-* **Severity:** **Major**
-* **Affected Scope:** Section 8 (Target API Contract, lines 364–366), Detailed Implementation Plan (lines 451, 458, 484, 485).
-* **Simplicity Rationale:**
-  The document introduces `POST /api/v1/verifications/{id}/export` (rendering reports as JSON or PDF) and `GET`/`PATCH /api/v1/settings` (with a dedicated schema, route, and frontend SettingsModal.tsx). This directly contradicts the Concepts Brief: *"The initial release targets a lean vertical slice before adding batching or PDF reporting."* Furthermore, the document never even defines what "client preferences" exist (API keys are strictly server-side .env). Building PDF generation pipelines and settings modals for a local single-user research tool is premature and violates YAGNI.
-* **Simpler Alternative:**
-  Completely cut the `/export` and `/settings` endpoints, schemas, and UI modals from Milestone 1.
-
-#### Finding 5: Over-Normalized 4-Table Relational Schema & Alembic for Local SQLite
-* **Severity:** **Major**
-* **Affected Scope:** Section 7 (Data Storage & Schema Design, lines 301–356), Detailed Implementation Plan (lines 452–455, 508–509).
-* **Simplicity Rationale:**
-  The system is a local, single-user research workbench (Non-Goal NG-6). Yet Section 7 designs a 4-table relational database (`VERIFICATION`, `ATOMIC_CLAIM`, `SOURCE`, `REASONING_STATEMENT`) with foreign key constraints, cascading deletes, and Alembic database migration management. The application only ever creates, fetches, and deletes verification records in their entirety. There is no query in the entire specification that searches, updates, or aggregates `REASONING_STATEMENT` or `ATOMIC_CLAIM` independently of its parent verification. Setting up multi-table relational joins, async SQLAlchemy cascades (which frequently trigger MissingGreenlet errors), and Alembic migrations creates gratuitous boilerplate.
-* **Simpler Alternative:**
-  Store verification runs in a single `verifications` table in SQLite, serializing sources, atomic claims, and reasoning statements as structured JSON columns. Drop Alembic until the schema actually stabilizes.
+| Criterion | Evaluation Lens | Status | Architectural Assessment |
+| :--- | :--- | :---: | :--- |
+| **0. Context Sufficiency** | Problem definition & motivation | ✅ PASS | Clearly articulates the 5 systemic failure modes in RAG/automated verification and defines the core mission. |
+| **1. Root Problem Focus** | Core mission alignment | ✅ PASS | Directly addresses confirmation bias, syndicated consensus, and hallucinated plausibility through dialectical retrieval and two-domain corroboration. |
+| **2. Simplicity & YAGNI** | Code minimization & scope control | ✅ PASS | Pruned speculative PDF exports, client settings API, and MinHash algorithms; strictly scopes Milestone 1 to single claims. |
+| **3. Latency & Budget Viability** | Synchronous 8.0s SLA compliance | ✅ PASS | Reconciles stage budgets (0.2s + 2.5s + 2.0s + 3.0s + 0.3s = 8.0s) and consolidates model inference into a single call. |
+| **4. Architectural Fit & Boundaries**| Abstraction & component layering | ✅ PASS | Clean separation: API gateway $\rightarrow$ pipeline orchestrator $\rightarrow$ provider adapters $\rightarrow$ SQLite repository. |
+| **5. Leverage Existing** | Standard platform conventions | ✅ PASS | Replaces custom socket proxies with standard search snippets; replaces Alembic/SQLAlchemy with native `aiosqlite`. |
+| **6. Zero-Decision Plan** | Implementation readiness | ✅ PASS | 8 sequential, testable build phases with explicit schemas, concrete database methods, and quantitative CI thresholds. |
 
 ---
 
-### 3. Nit / Minor Findings
+### Detailed Findings
 
-#### Finding 6: MinHash / SimHash 64-bit Fingerprinting for <= 10 Snippets
-* **Severity:** **Nit**
-* **Affected Scope:** Section 5 (Source-Family Clustering & Syndication Detection, lines 272–282), Detailed Implementation Plan (line 466).
+#### 🔴 Blocker Findings (0)
+*None. All previous blocker findings (B-01 through B-07) have been fully resolved.*
+
+#### 🟡 Major Findings (0)
+*None. All previous major findings (M-01 through M-011) have been fully resolved.*
+
+#### 🟢 Nit Findings (3)
+
+##### Finding 1: Dependency Tag for Tailwind CSS v4 in Frontend Package
+* **Severity:** 🟢 **Nit**
+* **Affected Scope:** Section Detailed Implementation Plan, Phase 6 (lines 694, 697).
 * **Simplicity Rationale:**
-  MinHash and SimHash with 3-word shingles are designed for clustering millions of documents where O(N^2) comparisons are computationally prohibitive. Here, the system clusters at most 5 to 10 short snippets per request. Calculating exact Jaccard similarity across token sets in Python for 10 snippets takes < 1ms. Introducing MinHash/SimHash data structures and shingling logic is algorithmic over-engineering.
-* **Simpler Alternative:**
-  Use exact token-set Jaccard overlap combined with domain and wire byline extraction.
+  In `frontend/package.json`, `@tailwindcss/vite` and `tailwindcss` are pinned to `^4.0.0-beta.4`. Tailwind CSS v4 is generally available in stable release (`^4.0.0`). While functional, using a pre-release beta tag introduces unnecessary version churn during build setup.
+* **Suggested Simplification:**
+  Update to stable `"tailwindcss": "^4.0.0"` and `"@tailwindcss/vite": "^4.0.0"`.
 
-#### Finding 7: Altitude Drop: 55 Lines of Low-Level Implementation Code for RequestBudget
-* **Severity:** **Nit**
-* **Affected Scope:** Section 4 (Authoritative Request-Wide Budget & Deadline Accounting, lines 215–270).
+##### Finding 2: Unused `status` Column in SQLite Flat Schema
+* **Severity:** 🟢 **Nit**
+* **Affected Scope:** Section 7 (lines 281, 534, 557).
 * **Simplicity Rationale:**
-  Section 4 descends into low-level code implementation details by embedding a full 55-line Python class complete with `asyncio.Lock()` primitives, internal state counters, and lock acquisition logic. High-level architecture documents must focus on contracts, state transitions, and timeouts, not low-level synchronization boilerplate. Furthermore, an explicit mutex lock is redundant in Python's single-threaded event loop for non-interleaved synchronous arithmetic.
-* **Simpler Alternative:**
-  Replace the Python code block with a clear specification table of stage timeouts, request ceilings, and deadline escalation behaviors.
+  The `verifications` table schema defines a `status TEXT NOT NULL` column, which `save_verification()` hardcodes to `"completed"`. However, `VerificationResponse` and `VerificationListItem` schemas omit this field since all persisted records in Milestone 1 are completed verifications. Maintaining a static column that is never queried or surfaced in API schemas is redundant.
+* **Suggested Simplification:**
+  Either remove the `status` column from `CREATE TABLE verifications` to keep the table strictly aligned with `VerificationResponse`, or add `status: str = "completed"` to `VerificationListItem` if reserved for future asynchronous job state tracking.
 
-#### Finding 8: Premature File and Micro-Service Fragmentation (23 Backend Files)
-* **Severity:** **Nit**
-* **Affected Scope:** Section Detailed Implementation Plan (lines 440–493).
+##### Finding 3: Synchronous Directory Creation in Database Constructor
+* **Severity:** 🟢 **Nit**
+* **Affected Scope:** Section Detailed Implementation Plan, Phase 2 (`Database.__init__`, line 523).
 * **Simplicity Rationale:**
-  The plan pre-allocates 23 separate backend files before writing any working code, creating 8 micro-service files under `backend/app/services/` (`budget.py`, `normalization.py`, `retrieval.py`, `clustering.py`, `sufficiency.py`, `citations.py`, `sanitizer.py`, `orchestrator.py`). Several of these services (such as citations.py which only checks substring existence, and sanitizer.py which applies regexes) consist of trivial functions. Fragmenting them into separate modules prematurely adds unnecessary architectural indirection.
-* **Simpler Alternative:**
-  Consolidate the verification flow into cohesive modules (e.g., `pipeline.py` or `verification_service.py`), separating into dedicated modules only when component logic naturally expands.
+  `Database.__init__()` executes `Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)`. While completely benign during application bootstrapping, performing synchronous filesystem operations inside an asynchronous service constructor can be deferred to `async def init_db()`.
+* **Suggested Simplification:**
+  Move the directory creation call inside `init_db()` alongside SQLite file creation and pragma execution.
 
+---
+
+### Architectural Verification Summary
+
+```mermaid
+flowchart TD
+    subgraph Milestone_1_Execution [Milestone 1 Converged Architecture: Verified Lean & Sound]
+        Claim["User Claim (<= 500 chars)"] --> GateA{"Gate A: Pre-Screening"}
+        GateA -- Subjective / Future --> ShortNotVerif["Return not_verifiable (0 Search, 0 LLM)"]
+        GateA -- Empirical Claim --> Stage1["Stage 1 Search: Brave (1 Query, Top 5 Snippets)"]
+        
+        Stage1 --> CheckSnippets{"Snippets Found?"}
+        CheckSnippets -- No Usable Results --> ShortNoEv["Return insufficient_evidence (0 LLM)"]
+        CheckSnippets -- Valid Evidence --> Stage2Check{"Disputed & Time >= 3.5s?"}
+        
+        Stage2Check -- Yes --> Stage2["Stage 2 Search: Brave Counter-Query (1 Query)"]
+        Stage2Check -- No --> SingleSynthesis["Single Structured Synthesis LLM Call (~2.5s)"]
+        Stage2 --> SingleSynthesis
+        
+        SingleSynthesis --> CitVal["Tier 1 & Tier 2 Normalized Citation Validation"]
+        CitVal --> PolicyCheck{"2+ Independent Domain Families?"}
+        PolicyCheck -- Yes --> RecordVerdict["Accept Proposed Verdict"]
+        PolicyCheck -- No & Verdict='supported' --> Downgrade["Downgrade to insufficient_evidence"]
+        
+        RecordVerdict --> FlatDB[(SQLite: Single Table 'verifications' in WAL Mode)]
+        Downgrade --> FlatDB
+        ShortNotVerif --> FlatDB
+        ShortNoEv --> FlatDB
+    end
+```
+
+### Conclusion & Stage 5 Sign-Off
+
+`docs/designs/jintru_claim_verification.md` is architecturally robust, pragmatically scoped, and completely aligned with the **Zoom Out Standard**. The system avoids premature optimizations, adheres strictly to the single-claim vertical slice, respects the 8.0-second SLA, and provides a clear, phased blueprint for implementation.
+
+**Final Verdict:** 🟢 **PASS** — Approved to proceed to downstream comprehension and implementation readiness phases.

@@ -1,9 +1,11 @@
-# Reality Check AI (`jintru`) — Research-Backed Project Specification
+# Reality Check AI (`jintru`) — Research Foundation & Architectural Decisions Specification
 
 * **Project Name:** jintru (Reality Check AI)
 * **Date:** 2026-10-30
-* **Status:** Final Audit Complete (Ready for Implementation)
-* **Target Delivery:** Single-agent verifiable claim verification system connecting research, architecture, API contract, UI behavior, security boundaries, and CI/CD quality gates.
+* **Status:** Approved Research Specification (Converged with Milestone 1 Architecture)
+* **Authoritative Implementation Design:** [`docs/designs/jintru_claim_verification.md`](file:///home/omprakash/Documents/jintru/docs/designs/jintru_claim_verification.md)
+* **Sitemap & Registry:** [`docs/designs/SITEMAP.md`](file:///home/omprakash/Documents/jintru/docs/designs/SITEMAP.md)
+* **Predecessors & Context:** [`docs/designs/concepts_brief.md`](file:///home/omprakash/Documents/jintru/docs/designs/concepts_brief.md)
 
 ---
 
@@ -21,19 +23,19 @@ All specifications, architectural choices, and technological selections within t
 
 `[Research-backed]`
 
-Recent October 2026 and foundational natural language processing and security research directly refutes the naive paradigm of feeding search snippets into an LLM and asking for a verdict. The following research findings define mandatory architectural requirements for `jintru`:
+Recent October 2026 and foundational natural language processing and security research directly refutes the naive paradigm of feeding search snippets into an LLM and asking for an ungrounded verdict. The following research findings define mandatory architectural requirements for `jintru`:
 
 | Paper & Citation | Core Finding | Engineering Design Consequence in `jintru` | Classification |
 | :--- | :--- | :--- | :--- |
 | **How Robust Are Automated Fact-Checking Systems? A Cross-Benchmark Evaluation**<br>(EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.emnlp-main.1915/) | Evaluated 9 systems across 4 benchmarks (scientific, open-web, climate). Model rankings fluctuate wildly across domains. Substituting gold evidence for retrieved evidence boosts veracity accuracy by **14–22 percentage points**. | **Decouple Retrieval from Verification:** The pipeline must evaluate retrieval recall/precision independently of verdict generation. Never conflate retrieval failure with model reasoning failure. | `[Research-backed]` |
 | **Retrieving Facts or Reinforcing Beliefs? Confirmation Bias in RAG**<br>(EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.emnlp-main.44/) | Introduces CoBiT (707 minimally perturbed claim–counterclaim pairs). Proves standard RAG retrieval rankings and LLM generation actively amplify confirmation bias toward the query framing. | **Counterevidence-Aware Retrieval & Fairness:** Formulate dialectical queries to retrieve refuting evidence. Ensure the retrieval process gives the claim a fair chance to be disproved. Benchmark against claim/negation pairs to measure verdict symmetry. | `[Research-backed]` |
-| **Advancing Fact-Checking via Argumentative Reasoning**<br>(EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.emnlp-main.1207/) | Introduces MAVEN benchmark and ArgCheck framework. Demonstrates that web evidence is heterogeneous and contradictory; simple link counting fails. Models evidence as arguments with attack relations. | **Source Disagreement & Conflict Modeling:** Do not tally source URLs. Maintain contradictory evidence in the response graph, attribute stances explicitly, and model source disagreements before synthesizing verdicts. (Full formal argumentation engine is deferred). | `[Research-backed]` |
-| **Retrieve Few, Verify Many: Segment-Level Evidence Reuse**<br>(Findings of EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.findings-emnlp.1584/) | Introduces SegmentFact. Reusing evidence across related claims within long-form text assessment reduces redundant retrieval calls. | **Context-Aware Evidence Sharing:** When decomposing compound claims into atomic propositions, share common evidence pools across propositions while guarding against cross-entity temporal leakage. Live-web gains must be evaluated empirically. | `[Research-backed]` |
+| **Advancing Fact-Checking via Argumentative Reasoning**<br>(EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.emnlp-main.1207/) | Introduces MAVEN benchmark and ArgCheck framework. Demonstrates that web evidence is heterogeneous and contradictory; simple link counting fails. Models evidence as arguments with attack relations. | **Source Disagreement & Conflict Modeling:** Do not tally source URLs. Maintain contradictory evidence in the response, attribute stances explicitly, and model source disagreements before synthesizing verdicts. (Formal multi-agent argumentation is deferred). | `[Research-backed]` |
+| **Retrieve Few, Verify Many: Segment-Level Evidence Reuse**<br>(Findings of EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.findings-emnlp.1584/) | Introduces SegmentFact. Reusing evidence across related claims within long-form text assessment reduces redundant retrieval calls. | **Evidence Pooling (Phase 2):** Motivates cross-proposition evidence reuse when decomposing compound claims. In Milestone 1, claims are strictly single atomic assertions, eliminating cross-claim leakage. | `[Research-backed]` |
 | **Peerify: Benchmarking Peer-Review Claim Verification**<br>(EMNLP 2026 Industry) [ACL Anthology](https://aclanthology.org/2026.emnlp-industry.169/) | Benchmarks claim decomposition and manuscript verification. Identifies that interpretive, subjective, or ambiguous claims break standard binary/ternary veracity classifiers. | **Explicit Abstention Category (`not_verifiable`):** Distinguish non-verifiable opinions and semantic ambiguities from objective factual claims. Do not force subjective input into true/false verdicts. | `[Research-backed]` |
 | **TRACER: Trace-Regularized Training Against Indirect Prompt Injection**<br>(Findings of EMNLP 2026) [ACL Anthology](https://aclanthology.org/2026.findings-emnlp.2124/) | Demonstrates that defenses trained on direct user prompts fail significantly when identical attack instructions appear inside retrieved context. | **Retrieved Context as Untrusted Security Boundary:** Treat all retrieved web content as untrusted input. Validate output behavior against adversarial web snippets rather than assuming prompt delimiters eliminate risk. | `[Research-backed]` |
-| **Overcoming the Retrieval Barrier: Real-World Indirect Prompt Injection**<br>(USENIX Security 2026) [USENIX](https://www.usenix.org/conference/usenixsecurity26/presentation/chang-hongyan) | Analyzes practical injection payloads engineered to enter search engine results and poison downstream RAG synthesis tasks. | **Poisoning Defense & Capability Stripping:** Verification LLM passes receive zero access to external network tools, database writes, or state mutations. | `[Research-backed]` |
-| **Do LLMs Know When Evidence is Insufficient?**<br>(ScienceDirect 2026) [ScienceDirect](https://www.sciencedirect.com/org/science/article/pii/S1546221826007526) | Proposes a 5-level evidence sufficiency benchmark (supportive, partial, irrelevant, absent, conflicting). Demonstrates high over-answering rates under partial/absent evidence. | **Two-Stage Sufficiency Gate:** Measure over-answering rate and false abstention rate as primary metrics. Enforce deterministic structural checks before semantic evaluation. | `[Research-backed]` |
-| **Ev2R: Evaluating Evidence Quality and Verdict Reliability in Automated Fact-Checking**<br>(EMNLP 2026) [ACL Anthology](https://aclanthology.org/) | Establishes joint evaluation protocols demonstrating that high verdict accuracy does not imply valid evidence retrieval. Penalizes systems whose verdicts rely on noisy or ungrounded evidence. | **Decoupled Evaluation Protocol:** Implement independent benchmark experiments for (1) fixed-evidence reasoning and (2) live-retrieval quality. | `[Research-backed]` |
+| **Overcoming the Retrieval Barrier: Real-World Indirect Prompt Injection**<br>(USENIX Security 2026) [USENIX](https://www.usenix.org/conference/usenixsecurity26/presentation/chang-hongyan) | Analyzes practical injection payloads engineered to enter search engine results and poison downstream RAG synthesis tasks. | **Poisoning Defense & Quarantine:** Screen retrieved snippets for instruction patterns; quarantine flagged snippets from prompt context; strip model capabilities. | `[Research-backed]` |
+| **Do LLMs Know When Evidence is Insufficient?**<br>(ScienceDirect 2026) [ScienceDirect](https://www.sciencedirect.com/org/science/article/pii/S1546221826007526) | Proposes a 5-level evidence sufficiency benchmark (supportive, partial, irrelevant, absent, conflicting). Demonstrates high over-answering rates under partial/absent evidence. | **Two-Stage Sufficiency Gate:** Measure over-answering rate and false abstention rate as primary metrics. Enforce deterministic structural checks before semantic evaluation. Short-circuit on empty retrieval. | `[Research-backed]` |
+| **Ev2R: Evaluating Evidence Retrieval in Automated Fact-Checking**<br>(TACL 2026) [ACL Anthology](https://aclanthology.org/2026.tacl-1.25/) | Establishes joint evaluation protocols demonstrating that high verdict accuracy does not imply valid evidence retrieval. Penalizes systems whose verdicts rely on noisy or ungrounded evidence. | **Decoupled Evaluation Protocol:** Implement independent benchmark experiments for (1) fixed-evidence reasoning and (2) live-retrieval quality. | `[Research-backed]` |
 
 ---
 
@@ -43,30 +45,30 @@ Recent October 2026 and foundational natural language processing and security re
 
 The baseline bibliography is classified by publication type, evaluation setting, and direct engineering application:
 
-### A. Peer-Reviewed Conference & Workshop Papers
+### A. Peer-Reviewed Conference & Journal Papers
 1. **Claim Verification in the Age of Large Language Models: A Survey (ACL 2026)**
    * *Type:* Survey Paper. *Setting:* Comprehensive review of LLM verification architectures.
    * *Application to `jintru`:* Baseline for system stage decomposition and decoupling retrieval from reasoning.
    * *Link:* [ACL Anthology](https://aclanthology.org/2026.acl-srw.2/)
 2. **Evaluating Retrieval Augmented Generation: A Comprehensive Review (2026)**
-   * *Type:* Peer-Reviewed Journal (Springer). *Setting:* 4-axis RAG evaluation framework.
+   * *Type:* Peer-Reviewed Journal (Springer SN Computer Science). *Setting:* 4-axis RAG evaluation framework.
    * *Application to `jintru`:* Defines independent evaluation metrics in `evals/` rather than a single quality score.
    * *Link:* [Springer Nature Link](https://link.springer.com/article/10.1007/s42979-026-05134-x)
-3. **ElementCheck (Findings of EMNLP 2026)**
-   * *Type:* Findings Paper. *Setting:* Complexity-aware verification allocating computational budgets based on claim hardness.
-   * *Application to `jintru`:* Dynamic budget allocation (counterqueries) for complex claims.
+3. **ElementCheck: Complexity-Aware Fact-Checking (Findings of EMNLP 2026)**
+   * *Type:* Findings Paper. *Setting:* Allocates computational budgets based on claim hardness.
+   * *Application to `jintru`:* Informs two-stage retrieval budget allocation (Stage 2 counter-queries dispatched only when necessary).
    * *Link:* [ACL Anthology](https://aclanthology.org/2026.findings-emnlp.868/)
-4. **InSight (EMNLP 2026)**
-   * *Type:* Conference Paper. *Setting:* Interactive verification against charts and visual data.
-   * *Application to `jintru`:* Out of scope for MVP; reserved for Phase 2 multimodal extensions (FR-15).
+4. **InSight: Multimodal Claim Verification (EMNLP 2026)**
+   * *Type:* Conference Paper. *Setting:* Verification against charts and visual data.
+   * *Application to `jintru`:* Out of scope for Milestone 1; reserved for Phase 2 multimodal extensions (NG-5).
    * *Link:* [ACL Anthology](https://aclanthology.org/2026.emnlp-main.606/)
 5. **FActScore: Fine-grained Atomic Carving for Factual Precision (EMNLP 2023)**
-   * *Type:* Conference Paper. *Setting:* Atomic proposition decomposition of generation.
-   * *Application to `jintru`:* Atomic proposition decomposition algorithm for compound input statements (FR-03).
-   * *Link:* [Research at Meta](https://aclanthology.org/2023.emnlp-main.741/)
+   * *Type:* Conference Paper. *Setting:* Atomic proposition decomposition.
+   * *Application to `jintru`:* Theoretical foundation for atomic proposition carving (deferred to Phase 2; Milestone 1 scopes to single factual claims).
+   * *Link:* [ACL Anthology](https://aclanthology.org/2023.emnlp-main.741/)
 6. **ALCE: Automatic Language Model Citation Evaluation (EMNLP 2023)**
    * *Type:* Conference Paper. *Setting:* Citation precision and recall metrics for language models.
-   * *Application to `jintru`:* Informs rules for Tier 3 semantic citation validation and evaluation harness.
+   * *Application to `jintru`:* Defines benchmark measurement for Tier 3 citation entailment in CI.
    * *Link:* [ACL Anthology](https://aclanthology.org/2023.emnlp-main.398/)
 7. **Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection (ICLR 2024)**
    * *Type:* Conference Paper. *Setting:* Adaptive retrieval and reflection tokens.
@@ -74,61 +76,66 @@ The baseline bibliography is classified by publication type, evaluation setting,
    * *Link:* [IBM Research / arXiv](https://research.ibm.com/publications/self-rag-learning-to-retrieve-generate-and-critique-through-self-reflection)
 8. **RAGTruth: A Hallucination Benchmark for Retrieval-Augmented Generation (ACL 2024)**
    * *Type:* Conference Paper. *Setting:* Human-annotated corpus of hallucinations in RAG outputs.
-   * *Application to `jintru`:* Test harness for ensuring explanation text does not generate ungrounded assertions.
+   * *Application to `jintru`:* Grounding for Tier 2 normalized exact quote validation to prevent hallucinated citations.
    * *Link:* [ACL Anthology](https://aclanthology.org/2024.acl-long.585/)
 9. **LLatrieval: LLM-Verified Retrieval for Verifiable Generation (NAACL 2024)**
    * *Type:* Conference Paper. *Setting:* Iterative retrieval verification.
-   * *Application to `jintru`:* Selective follow-up queries when initial evidence is structurally incomplete.
+   * *Application to `jintru`:* Selective follow-up queries when initial evidence is structurally incomplete or one-sided.
    * *Link:* [ACL Anthology](https://aclanthology.org/2024.naacl-long.305/)
-10. **TRACER: Trace-Regularized Training Against Indirect Prompt Injection (Findings of EMNLP 2026)**
+10. **Ev2R: Evaluating Evidence Retrieval in Automated Fact-Checking (TACL 2026)**
+    * *Type:* Peer-Reviewed Journal Article (TACL). *Authors:* Mubashara Akhtar, Michael Schlichtkrull, Andreas Vlachos.
+    * *Setting:* Reference-based and proxy-level evaluation of evidence retrieval.
+    * *Application to `jintru`:* Decouples evidence retrieval scoring from final verdict generation.
+    * *Link:* [ACL Anthology](https://aclanthology.org/2026.tacl-1.25/)
+11. **TRACER: Trace-Regularized Training Against Indirect Prompt Injection (Findings of EMNLP 2026)**
     * *Type:* Findings Paper. *Setting:* Evaluates indirect prompt injection in retrieved contexts.
-    * *Application to `jintru`:* Proves prompt delimiters alone do not eliminate injection; motivates ADR-003 defense-in-depth.
+    * *Application to `jintru`:* Proves prompt delimiters alone do not eliminate injection; motivates ADR-003 defense-in-depth and quarantine rules.
     * *Link:* [ACL Anthology](https://aclanthology.org/2026.findings-emnlp.2124/)
-11. **Overcoming the Retrieval Barrier: Real-World Indirect Prompt Injection (USENIX Security 2026)**
+12. **Overcoming the Retrieval Barrier: Real-World Indirect Prompt Injection (USENIX Security 2026)**
     * *Type:* Conference Paper. *Setting:* Empirical analysis of retrieval poisoning attacks.
-    * *Application to `jintru`:* Threat model for retrieved web snippet sanitization and capability stripping.
+    * *Application to `jintru`:* Threat model for retrieved web snippet sanitization, capability stripping, and snippet quarantine.
     * *Link:* [USENIX](https://www.usenix.org/conference/usenixsecurity26/presentation/chang-hongyan)
-12. **Do LLMs Know When Evidence is Insufficient? (ScienceDirect 2026)**
+13. **Do LLMs Know When Evidence is Insufficient? (ScienceDirect 2026)**
     * *Type:* Journal Article. *Setting:* Evaluates abstention under 5 evidence conditions.
     * *Application to `jintru`:* Core motivation for the two-stage sufficiency gate and abstention metrics.
     * *Link:* [ScienceDirect](https://www.sciencedirect.com/org/science/article/pii/S1546221826007526)
 
 ### B. Standard Benchmark Datasets
-13. **AVeriTeC: Real-World Claim Verification with Evidence (NeurIPS 2023)**
+14. **AVeriTeC: Real-World Claim Verification with Evidence (NeurIPS 2023)**
     * *Type:* Benchmark Dataset. *Setting:* Multi-hop real-world claims and evidence QA.
     * *Application to `jintru`:* Fixture dataset for regression evaluation (`evals/cases.jsonl`).
     * *Link:* [NeurIPS Proceedings](https://proceedings.neurips.cc/paper_files/paper/2023/file/cd86a30526cd1aff61d6f89f107634e4-Paper-Datasets_and_Benchmarks.pdf)
-14. **AVeriTeC Shared Task (FEVER Workshop 2024)**
+15. **AVeriTeC Shared Task (FEVER Workshop 2024)**
     * *Type:* Shared Task Evaluation. *Setting:* Joint evaluation of verdict and evidence quality.
     * *Application to `jintru`:* Metric penalizing correct verdicts supported by incorrect evidence.
     * *Link:* [ACL Anthology](https://aclanthology.org/2024.fever-1.1/)
-15. **QueenVer: Question Enrichment for Claim Verification (FEVER Workshop 2024)**
+16. **QueenVer: Question Enrichment for Claim Verification (FEVER Workshop 2024)**
     * *Type:* Workshop Paper. *Setting:* Multi-perspective question generation.
     * *Application to `jintru`:* Query planning for multi-faceted factual assertions.
     * *Link:* [ACL Anthology](https://aclanthology.org/2024.fever-1.6/)
-16. **FEVER: Large-Scale Fact Extraction and VERification (NAACL 2018)**
+17. **FEVER: Large-Scale Fact Extraction and VERification (NAACL 2018)**
     * *Type:* Foundational Benchmark Dataset. *Setting:* 3-way classification (`Supported`, `Refuted`, `NotEnoughInfo`).
     * *Application to `jintru`:* Grounding for core verdict taxonomy.
     * *Link:* [ACL Anthology](https://aclanthology.org/N18-1074/)
-17. **SciFact: Scientific Claim Verification (EMNLP 2020)**
+18. **SciFact: Scientific Claim Verification (EMNLP 2020)**
     * *Type:* Domain Benchmark Dataset. *Setting:* Scientific claims with annotated abstract rationales.
     * *Application to `jintru`:* Specialized test suite for scientific and health claims.
     * *Link:* [ACL Anthology](https://aclanthology.org/2020.emnlp-main.609/)
 
 ### C. Empirical Theses & Preprints
-18. **Evaluating Mitigation Strategies Against Indirect Prompt Injection (2026)**
+19. **Evaluating Mitigation Strategies Against Indirect Prompt Injection (2026)**
     * *Type:* Academic Thesis (eScholarship). *Setting:* Comparative evaluation of sanitization, delimiters, and tool restrictions.
-    * *Application to `jintru`:* Highlights trade-offs between prompt sanitization and utility loss. Results to be replicated locally.
+    * *Application to `jintru`:* Highlights trade-offs between prompt sanitization and utility loss. Results replicated in offline tests.
     * *Link:* [eScholarship](https://escholarship.org/uc/item/8zq0952f)
 
 ### D. Security & Accessibility Standards
-19. **OWASP Top 10 (2025 Standard for Web Applications)**
+20. **OWASP Top 10 (2025 Standard for Web Applications)**
     * *Type:* Security Baseline. *Focus:* Broken access control, security misconfigurations, cryptographic failures.
-20. **OWASP API Security Top 10 (2023 Standard)**
+21. **OWASP API Security Top 10 (2023 Standard)**
     * *Type:* Security Baseline. *Focus:* Broken object-level authorization, rate limiting, SSRF, resource consumption.
-21. **OWASP Server-Side Request Forgery Prevention Cheat Sheet**
+22. **OWASP Server-Side Request Forgery Prevention Cheat Sheet**
     * *Type:* Security Guidance. *Focus:* Controlling redirects, DNS rebinding mitigations, IPv4-mapped IPv6, and destination address validation.
-22. **W3C Web Content Accessibility Guidelines (WCAG 2.2 AA)**
+23. **W3C Web Content Accessibility Guidelines (WCAG 2.2 AA)**
     * *Type:* Accessibility Standard. *Focus:* Color contrast pairs, visible focus indicators, screen-reader announcements, keyboard navigation.
 
 ---
@@ -137,82 +144,59 @@ The baseline bibliography is classified by publication type, evaluation setting,
 
 `[Recommended design]`
 
-### ADR-001: Bounded Two-Stage Retrieval & Budget Accounting Policy
-* **Context:** Unconstrained retrieval fan-out for compound claims exhausts quotas, violates latency targets, and risks runaway provider retries. Furthermore, multiple URLs repeating identical wire copy creates an illusion of consensus.
-* **Decision:**
-  * **Input Bound:** Maximum 5 atomic claims per request. Inputs exceeding this limit are rejected with HTTP 422 `TOO_MANY_CLAIMS`.
-  * **Retrieval Fairness:** Query planning must give the claim a fair opportunity to be refuted. Every verification request explicitly tracks query intent (`support_seeking` vs. `counterevidence_seeking`) and per-claim retrieval coverage.
-  * **Source Family Clustering:** Group articles derived from the same original wire report or syndicated press release into a shared `source_family_id` via lead-paragraph text MinHash/SimHash ($\ge 0.85$ Jaccard similarity threshold) or wire byline matching. Repeated reporting within the same family is never treated as independent corroboration. Independent reporting from different editorial outlets is preserved as separate families.
-  * **Two-Stage Execution:**
-    1. *Stage 1 (Initial Search):* Exactly 1 focused query per atomic claim.
-    2. *Stage 2 (Targeted Counterevidence):* Maximum 1 counterevidence query per atomic claim, triggered *only* when Stage 1 evidence is one-sided, conflicting, or incomplete.
-  * **Explicit Request-Wide Budget Object:**
-    * `max_distinct_queries = 10`: Hard ceiling on unique search queries planned.
-    * `max_provider_attempts = 12`: Atomic request-scoped counter tracking actual network calls (including retries). Attempt capacity is pre-reserved before dispatching concurrent calls.
-    * `max_page_fetches = 5`: Hard ceiling on full-page text extractions per request. Search snippets are processed separately from fetched full pages.
-    * `concurrency = 3`: Maximum simultaneous outbound HTTP calls.
-    * `max_retries = 1`: At most 1 retry for transient 429/503 errors respecting `Retry-After`.
+### ADR-001: Bounded Dialectical Retrieval & Latency Budget Policy
+* **Context:** Unconstrained retrieval fan-out exhausts quotas, violates latency targets, and risks runaway provider retries. Furthermore, multiple URLs repeating identical wire copy creates an illusion of consensus.
+* **Decision (Milestone 1 Baseline):**
+  * **Input Bound:** Single factual assertion (min 5, max 500 characters). Inputs exceeding this ceiling or containing multiple propositions are rejected with HTTP 422. (Compound claim decomposition is deferred to Phase 2).
+  * **Retrieval Fairness:** Query planning must give the claim a fair opportunity to be refuted. Track query intent (`support_seeking` vs. `counterevidence_seeking`).
+  * **Heuristic Source Grouping:** Group snippets sharing the same registered domain or wire service attribution into a shared `source_family_id`. Repeated reporting within the same family is never treated as independent corroboration.
+  * **Sequential Two-Stage Execution:**
+    1. *Stage 1 (Initial Search):* Exactly 1 focused query against Brave Search API (`/res/v1/web/search`) retrieving top 5 snippets.
+    2. *Stage 2 (Targeted Counterevidence):* At most 1 counterevidence query, triggered *only* when Stage 1 evidence is one-sided or disputed, and remaining request time is ≥ 3.5s.
   * **Authoritative Request Deadline (8.0 Seconds Target):**
     * A single deadline is created at request entry: `deadline = now() + 8.0s`.
-    * Stage-level time budgeting with explicit safety buffer: Initial Search (max 2.5s), Counterevidence & Fetches (max 2.0s), Gate B Assessment (max 1.5s), Verdict Synthesis (max 1.0s), Orchestration/Serialization/DB buffer (0.5s).
-    * Minimum remaining-time threshold: At least 1.5s remaining is required before initiating a model synthesis call. If time expires after retrieval but before synthesis, the system returns a structured partial response with limitations, or HTTP 504 Gateway Timeout if no usable assessment exists.
-* **Consequences:** Prevents budget overruns; guarantees strict 8.0-second wall-clock termination; ensures fair, diverse retrieval.
+    * Stage-level time budgeting: Pre-Classification & Gate A (max 0.2s), Stage 1 Search (max 2.5s), Stage 2 Counter-Search (max 2.0s), Single Synthesis Call (max 3.0s), Storage & Safety Buffer (0.3s). Sum = 8.0s.
+    * Minimum remaining-time threshold: At least 1.5s remaining is required before initiating a model synthesis call. If remaining time is < 1.5s, return HTTP 504 Gateway Timeout or a structured partial response with limitations.
+* **Consequences:** Prevents budget overruns; guarantees strict 8.0-second wall-clock termination; eliminates HTTP 429 rate limit spikes.
 
-### ADR-002: Two-Stage Evidence Sufficiency, Temporal Reasoning & Verdict Taxonomy
+### ADR-002: Evidence Sufficiency Gate, Pre-Retrieval Classification & 5-Way Verdict Taxonomy
 * **Context:** Purely deterministic rules cannot assess semantic entailment on paraphrased claims, while purely model-driven checks suffer from high over-answering on absent evidence. Claims also frequently mix temporal periods or future forecasts.
-* **Decision:** Decouple internal pipeline processing states from public API verdicts:
-  * **Internal States:** `eligible`, `needs_more_evidence`, `cannot_verify`.
+* **Decision:**
+  * **Internal States:** `eligible`, `needs_more_evidence`, `insufficient_evidence`, `not_verifiable`.
   * **Public API Verdicts (5-Way):** `supported`, `contradicted`, `mixed`, `insufficient_evidence`, `not_verifiable`.
-  * **Gate A (Deterministic Screening):**
-    * *Claim Validity:* Non-empty, 1–2,000 characters, interpretable proposition.
-    * *Provenance Check:* Snippet possesses valid `source_id`, canonical `url`, publisher domain, and retrieval timestamp.
-    * *Relevance Signal (Soft Filter):* Lexical and entity matching is used as a soft relevance score, *not* a hard rejection filter. Weak lexical match with valid semantic context is passed to Gate B rather than dropped.
-    * *Source Family Deduplication:* Syndicated copies of the same article text are grouped into a single source family to prevent artificial consensus.
-    * *Budget Check:* Stops expansion if query or attempt limits are reached.
-  * **Temporal Reasoning Policy:**
-    * Evidence must be evaluated against the claim's relevant event date, observation period, publication date, and requested reference period. Newer evidence is *not* automatically more relevant than older evidence.
-    * Strictly distinguish `outdated evidence` from `contradictory evidence`.
-  * **Prediction Semantics:**
-    * Subjective / value judgments $\rightarrow$ `not_verifiable`.
-    * Empirical claims lacking sufficient current evidence $\rightarrow$ `insufficient_evidence`.
-    * Future predictions $\rightarrow$ `not_verifiable` for present-tense verification, accompanied by an explicit explanation that the outcome is not yet observable.
-  * **Gate B (Structured Semantic Assessment):** Evaluates passage-to-claim relationships using a strict Pydantic schema with validated enums:
-    * `relation`: `supports`, `contradicts`, `neutral`
-    * `relevance`: `direct`, `indirect`, `contextual`, `irrelevant`
-    * `coverage`: `complete`, `partial`, `none`
-    * `conflict_status`: `no_conflict`, `material_conflict`, `resolvable_discrepancy`
-    * `recommended_action`: `proceed_to_verdict`, `retrieve_counterevidence`, `abstain_insufficient`
-  * **Application Routing & Nuanced Conflict Resolution:**
-    * Material conflicts are evaluated for resolution via publication dates, methodology differences, or domain authority.
-    * If irreconcilable genuine disagreement exists between credible sources $\rightarrow$ public verdict is `mixed`.
-    * If coverage is missing and budget exhausted $\rightarrow$ internal `cannot_verify` maps to public verdict `insufficient_evidence`.
-* **Consequences:** Eliminates LLM calls on garbage inputs; prevents over-answering; ensures internal routing states do not leak as undocumented API verdicts.
+  * **Gate A Pre-Retrieval Deterministic Screening:**
+    * *Subjective Value Judgments:* Detects normative markers (`should`, `ought`, `best`, `worst`). Routes immediately to public verdict `not_verifiable` (0 search calls, 0 LLM calls).
+    * *Future Predictions:* Detects prospective markers (`will`, `by 2028`, `projected to`). Routes immediately to public verdict `not_verifiable` with explanation that future events cannot be empirically verified prior to occurrence (0 search calls, 0 LLM calls).
+    * *Empty Results Short-Circuit:* If Stage 1 search yields zero relevant snippets, short-circuits immediately to `insufficient_evidence` with 0 external LLM calls.
+  * **Single Structured Synthesis LLM Round-Trip:**
+    * When usable evidence exists, dispatches a single structured prompt to the Meta Model API with schema `VerificationSynthesisPayload`.
+  * **Application-Level Deterministic Verdict Acceptance:**
+    * `supported` requires: (1) model proposed `supported`, (2) at least two distinct `source_family_id` clusters with `stance="supports"`, (3) 0 unrefuted `refutes` stances, and (4) 100% of cited quotes pass Tier 2 normalized substring matching. If evidence has only 1 domain or fails Tier 2, application code downgrades the verdict to `insufficient_evidence`.
+    * `contradicted` requires: at least 1 authoritative or 2 distinct source families with `stance="refutes"`.
+    * `mixed` requires: genuine contradiction between credible sources with neither side decisively refuting the other.
+* **Consequences:** Eliminates external LLM calls on garbage or speculative inputs; prevents hallucinated consensus; provides deterministic bounds on model-generated verdicts.
 
-### ADR-003: Multi-Layer Defense-in-Depth for SSRF & Indirect Prompt Injection
+### ADR-003: Snippet-First Network Security & Multi-Layer Prompt Injection Defense
 * **Context:** Fetching arbitrary web pages risks SSRF attacks via DNS rebinding, IPv6 tunnels, and malicious redirects. Furthermore, retrieved content can contain adversarial instructions designed to manipulate model verdicts.
-* **Decision:** Implement strict network boundary and prompt security controls:
-  * **Comprehensive SSRF Prevention:**
-    * Outbound HTTP client validates resolved IP addresses before connection.
-    * Blocked ranges: IPv4 private (`127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.169.254/32`), IPv6 loopback (`::1`), unique-local (`fc00::/7`), link-local (`fe80::/10`), IPv4-mapped IPv6 (`::ffff:0:0/96`), and multicast/reserved ranges.
-    * DNS Rebinding Protection: Pin connection socket directly to the validated IP address rather than re-resolving hostname at request time.
-    * Redirect Protection: Automatic redirects are disabled. Every redirect destination hop is inspected and re-validated against the IP blocklist before following. Retries and fallback connections enforce identical checks.
-    * Scheme restriction: Strictly `http:` and `https:`. Max payload size: 2MB.
+* **Decision:**
+  * **Snippet-First Retrieval:** Evidence ingestion is restricted strictly to search provider snippets (`Brave Search API`) and cleaned text (`Brave LLM Context endpoint`). **Raw third-party web page crawling is completely excluded.**
+  * **SSRF Elimination:** Because the backend communicates solely with pre-configured trusted APIs (`api.search.brave.com`, Meta Model API), the SSRF attack surface is eliminated at the architectural level.
   * **Indirect Prompt Injection Mitigations:**
-    * System instructions and untrusted web excerpts are separated. Excerpts are stripped of control characters, HTML comments, and zero-width spaces, then wrapped in XML data blocks (`<evidence_snippet id="...">`).
-    * Pre-screen retrieved text for instruction-like patterns, common jailbreaks, and task-redirection keywords. Flagged passages are quarantined or down-weighted.
+    * System instructions and untrusted web excerpts are separated.
+    * Excerpts are stripped of control characters, HTML comments, and zero-width spaces.
+    * Heuristic Injection Scanner: Snippets containing instruction patterns (`system prompt:`, `override verdict`, `ignore previous instructions`) are **quarantined and excluded** from the synthesis prompt payload.
     * Principle of Least Privilege: The verification model has zero tools, zero network access, and zero database permissions.
-    * Decoupled Model Tasks: Verification is split into: (a) *Evidence Assessment Task* (classifying passage relationships), and (b) *Verdict Synthesis Task* (producing user summary using exclusively validated assessments).
   * **Three-Tier Citation Validation:**
-    * Tier 1 (Structural ID Existence): Deterministic check asserting every cited `source_id` exists in the retrieved set.
-    * Tier 2 (Excerpt Provenance): Deterministic check asserting the quoted excerpt exists verbatim within that source document.
-    * Tier 3 (Semantic Entailment): Evaluated in production via Gate B relation tags and tested in CI via the ALCE benchmark harness; deterministic software does not pretend to prove entailment.
-* **Consequences:** Closes SSRF gaps; measurably reduces injection attack success rate while maintaining benign verification accuracy.
+    * Tier 1 (Structural ID Existence): Deterministic check asserting every cited `source_id` exists in the active evidence list.
+    * Tier 2 (Excerpt Provenance): Deterministic normalized substring check (`html.unescape()`, whitespace collapse, smart quote normalization) asserting the quoted excerpt exists within source text.
+    * Tier 3 (Semantic Entailment): Evaluated in production via model relationship tags and tested in CI via the ALCE benchmark harness; application code does not claim to prove entailment deterministically.
+* **Consequences:** Eliminates SSRF risks; neutralizes injection attacks via quarantine; ensures all citations correspond to actual retrieved source text.
 
-### ADR-004: Decoupled Latency Objectives & Synchronous Deadline
+### ADR-004: Latency Objectives & Synchronous Deadline Accounting
 * **Context:** External web search and multi-step model inference across public networks cannot reliably guarantee a 3.0s P95 latency.
 * **Decision:**
-  * **Fast-Path Test Profile:** P95 $\le$ 3.0s applies strictly to cached verifications, mock provider fixtures, and single-claim fast paths.
-  * **Live-Search SLA:** Live external search, full-page fetches, and model inference are measured independently. Total request budget is capped at 8.0s hard cutoff with a 0.5s safety buffer.
+  * **Fast-Path Test Profile:** P95 ≤ 3.0s applies strictly to cached verifications, mock provider fixtures, and pre-retrieval short-circuit paths.
+  * **Live-Search SLA:** Live external search and model inference are measured independently. Total request budget is capped at an 8.0s hard cutoff with a 0.3s safety buffer.
 * **Consequences:** Eliminates dishonest performance guarantees; establishes transparent operational metrics.
 
 ### ADR-005: Decoupled Independent Factuality & Retrieval Evaluation Protocol
@@ -220,43 +204,36 @@ The baseline bibliography is classified by publication type, evaluation setting,
 * **Decision:** Establish two separate evaluation experiments in `evals/`:
   1. **Fixed-Evidence Evaluation:** Supply known ground-truth evidence to the model to isolate and evaluate reasoning, verdict classification, explanation quality, and citation entailment precision.
   2. **Live-Retrieval Evaluation:** Allow the complete pipeline to search the live web and evaluate whether it discovers necessary supporting evidence and known refuting sources.
-  * **Tracked Metrics:**
-    * *Evidence Recall & Precision:* Proportion of necessary evidence retrieved; proportion of retrieved evidence that is relevant.
-    * *Counterevidence Recall:* Discovery rate of known refuting evidence for false claims.
-    * *Source-Family Diversity:* Number of independent origin families identified per claim.
-    * *Citation Entailment Precision:* Proportion of cited statements logically entailed by the attached excerpt.
-    * *False-Support & False-Abstention Rates:* Over-answering under weak evidence; unnecessary abstention under sufficient evidence.
-    * *Verdict Symmetry:* Consistency of veracity flip on minimally perturbed CoBiT claim/counterclaim pairs.
+  * **Quantitative CI Pass Thresholds:**
+    * Citation Entailment Precision: ≥ 90%
+    * False-Support Rate under Absent Evidence: ≤ 5%
+    * Counterevidence Recall: ≥ 80%
 * **Consequences:** Prevents metric gaming; isolates model reasoning failures from retrieval failures.
 
 ---
 
-## 4. Audit & Corrections to Initial Plan
+## 4. Audit & Convergence Record
 
 `[Recommended design]` & `[Unverified]`
 
-| Initial Plan | Assessment | Adopted Decision & Implementation Requirement |
-| :--- | :--- | :--- |
-| **React + TypeScript + Vite frontend** | Keep | Retain standard stack. Target current supported releases (React 19.3, Vite 8.3) `[Unverified]`. Enforce strict typed boundary via generated OpenAPI types. |
-| **v0-generated UI** | Keep with constraints | Components must be audited for WCAG 2.2 AA accessibility, contrast ratios, keyboard navigation, and zero unhandled DOM states. |
-| **FastAPI + Pydantic backend** | Keep | Pin Python 3.12 and FastAPI 0.162.0 `[Unverified]`. Use Pydantic v2 schemas for all boundaries. |
-| **Meta Model API** | Keep behind adapter | Isolate vendor API calls behind `MetaModelProviderAdapter`. Use runtime model discovery via `GET /v1/models` and support current Muse models (e.g., `muse-spark-1.3`). The application logic interacts only with abstract interfaces (`ModelProvider`), enabling deterministic mocking during testing. |
-| **Single LLM pass decides verdict from search results** | **REJECTED** | **Implement 2-stage verification:** Explicit Evidence Sufficiency Gate precedes verdict generation. Separate query planning, retrieval, source deduplication, reasoning, and citation validation. |
-| **Binary/Ternary Verdicts (True/False/Mixed)** | **REJECTED** | **Adopt 5-category taxonomy:** `supported`, `contradicted`, `mixed`, `insufficient_evidence`, and `not_verifiable`. |
-| **Single AI-generated confidence score** | **REJECTED** | Self-reported model probabilities are uncalibrated. Display empirical evidence coverage, source agreement metrics, and identified evidence gaps. |
-| **Dedicated database server (PostgreSQL/MySQL)** | **DEFERRED** | Use local SQLite with async SQLAlchemy 2.x (`aiosqlite`) and Alembic for initial release. |
-| **Multi-agent autonomous framework** | **DEFERRED** | Establish a deterministic, reproducible single-pipeline architecture first. Autonomous agent swarms introduce non-deterministic race conditions and context bloat. |
+The architectural specification underwent rigorous evaluation via the EGM Goldfish Review Protocol (`consolidated_review_report.md`), resulting in the following convergence from the initial proposal to the approved Milestone 1 vertical slice:
+
+| Component | Initial Proposal | Audited Defect | Converged Milestone 1 Baseline |
+| :--- | :--- | :--- | :--- |
+| **Claim Scope** | Up to 5 atomic claims decomposed via NLP | Unbudgeted LLM latency, combinatorial query fan-out | Single atomic factual claim (≤ 500 chars). Proposition carving deferred to Phase 2. |
+| **Model Invocations** | 2 sequential LLM calls (Gate B 1.5s + Synthesis 1.0s) | Breaches 8.0s synchronous SLA over public networks | 1 structured synthesis LLM call (~2.5s window). Short-circuit on empty retrieval with 0 calls. |
+| **Web Ingestion** | Raw HTML crawling with custom socket IP-pinning transport | Fragile TLS cert validation, high SSRF exposure | Snippet-first ingestion via Brave Search API & LLM Context endpoint. Zero raw crawling. |
+| **Source Deduplication** | 64-bit MinHash / SimHash text shingling | Algorithmic overkill for ≤ 10 snippets | Heuristic domain & wire service attribution grouping. |
+| **Persistence** | 4-table relational database with async SQLAlchemy & Alembic | MissingGreenlet async issues, cascade delete bugs, migration overhead | Single flat `verifications` SQLite table with JSON columns in WAL mode with 5s busy timeout. |
+| **API Endpoints** | Verification, PDF export (`POST /export`), client settings (`/settings`) | YAGNI scope creep for local single-user research workbench | Pruned `/export` and `/settings`. Streamlined to core `/verifications` and `/health`. |
 
 ---
 
-## 5. First Milestone Vertical Slice
+## 5. Cross-Reference to Master Implementation Design
 
-To avoid over-planning and ensure rapid end-to-end verification, the initial implementation milestone delivers a complete vertical slice:
+This research specification establishes the scientific foundation and architectural policies for `jintru`. 
 
-1. **Claim Submission:** Accept a single factual claim via `POST /api/v1/verifications`.
-2. **Dialectical Retrieval:** Search for supporting and counterevidence using the Brave Search adapter with attempt pre-reservation.
-3. **Provenance & Clustering:** Extract raw snippets, compute canonical URLs, and cluster syndicated source families via MinHash fingerprinting.
-4. **Sufficiency Gate:** Execute Gate A deterministic screening and Gate B semantic assessment.
-5. **Grounded Synthesis:** Generate an explanation with Tier 1 and Tier 2 validated citations.
-6. **Local Persistence:** Persist the result and evidence snapshot in SQLite.
-7. **Workbench Display:** Render the verdict badge, summary, stance tags, and expandable source excerpts in the React UI.
+For the complete, implementation-ready design document containing detailed component specifications, Pydantic schemas, database wrapper code, frontend architecture, and the 8-phase zero-decision build plan, consult:
+
+* **Authoritative Master Design Document:** [`docs/designs/jintru_claim_verification.md`](file:///home/omprakash/Documents/jintru/docs/designs/jintru_claim_verification.md)
+* **Master Sitemap:** [`docs/designs/SITEMAP.md`](file:///home/omprakash/Documents/jintru/docs/designs/SITEMAP.md)
