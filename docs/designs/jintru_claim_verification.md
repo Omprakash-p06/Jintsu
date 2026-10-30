@@ -35,7 +35,7 @@ Users investigating factual assertions need an evidence workbench that gives cla
 
 * **G-1 (Bounded Dialectical Verification):** Verify single factual assertions (≤ 500 characters) by retrieving both supporting evidence and counterevidence. The entire request lifecycle (pre-retrieval classification, retrieval, single synthesis call, DB write) is governed by an authoritative 8.0-second request ceiling with reconciled stage budgets (0.2s Classification/Gate A, 2.3s Search, 2.0s Counter-search, 3.0s Synthesis, 0.5s Storage/Buffer).
 * **G-2 (Retrieval Fairness & Source Diversity):** Ensure query planning gives the claim a balanced opportunity to be refuted. Cluster retrieved evidence into source families via heuristic domain and wire attribution grouping, track query intent (support vs. counterevidence), and provide retrieval coverage metrics without discarding less prominent counterevidence.
-* **G-3 (Two-Stage Sufficiency & Short-Circuit Abstention):** Enforce Gate A deterministic structural screening. If an input is classified as subjective or a future prediction, or if retrieval yields zero usable results, short-circuit immediately with 0 external LLM calls. If evidence exists, dispatch a single structured synthesis LLM call with a minimum 1.5s remaining execution window.
+* **G-3 (Two-Stage Sufficiency & Short-Circuit Abstention):** Enforce Gate A deterministic structural screening. If an input is classified as subjective or a future prediction, or if retrieval yields zero usable results, short-circuit immediately with 0 external LLM calls. If evidence exists, dispatch a single structured synthesis LLM call with a minimum 2.5s remaining execution window.
 * **G-4 (Five-Way Verdict Taxonomy with Prediction Semantics):** Classify claims strictly into one of five public verdicts: `supported`, `contradicted`, `mixed`, `insufficient_evidence`, or `not_verifiable`. Distinguish subjective value judgments (`not_verifiable`), unverified empirical propositions (`insufficient_evidence`), and future predictions (`not_verifiable` for present verification, accompanied by an explicit non-observability rationale).
 * **G-5 (Realistic Source Provenance & Three-Tier Citation Validation):** Record complete provenance for every source across 8 validated fields (`source_id`, `url`, `domain`, `title`, `snippet`, `source_family_id`, `retrieved_at`, and `content_hash`). Enforce deterministic Tier 1 (structural ID existence) and Tier 2 (normalized exact excerpt substring match), paired with offline CI benchmark-evaluated Tier 3 semantic entailment testing.
 * **G-6 (Snippet-First Ingestion & Injection Defense):** Restrict evidence ingestion strictly to search provider snippets (Brave Search API) and cleaned text summaries (Brave LLM Context endpoint), eliminating raw third-party HTML web crawling and bespoke socket-level SSRF transport risks. Protect prompts via XML snippet isolation, quarantine heuristic injection patterns, and enforce deterministic application-level corroboration checks before awarding `supported`.
@@ -61,7 +61,7 @@ To maintain focus and engineering velocity, the initial release deliberately exc
 
 * **OQ-1 (Brave Search Web Search vs. LLM Context Endpoint):** **RESOLVED FOR MVP.** In Milestone 1, the Brave Web Search API (`/res/v1/web/search`) is the primary default evidence source. The Brave LLM Context endpoint is integrated as an optional backend configuration toggle (`BRAVE_RETRIEVAL_MODE="snippets" | "context"`) evaluated in benchmark testing.
 * **OQ-2 (Compound Claim Decomposition):** **RESOLVED.** Deferred to Phase 2. Milestone 1 is strictly scoped to single atomic assertions.
-* **OQ-3 (Meta Model API Runtime Verification):** *Open for Integration Test.* Validate exact model discovery behavior via `GET /v1/models`, model family options (`muse-spark-1.3`, `muse-spark-1.2`), request payloads, and structured output formatting before locking deployment config.
+* **OQ-3 (Meta Model API Contract):** **RESOLVED & LOCKED.** Production model is locked to `muse-spark-1.3` over base URL `https://api.meta.ai/v1` using `Authorization: Bearer {META_API_KEY}`. Structured output is enforced via `response_format: {"type": "json_schema", "json_schema": {"name": "verification_synthesis", "strict": true, "schema": VerificationSynthesisPayload.model_json_schema()}}`.
 * **OQ-4 (Minimum Veracity Evidence Thresholds):** **RESOLVED.** Explicit deterministic rules are enforced in application code: `supported` requires at least two distinct `source_family_id` clusters with direct supporting stance and zero unrefuted counterevidence. A single domain, no matter how prominent, cannot support a claim alone.
 * **OQ-5 (Graceful Degradation under Request Deadline):** **RESOLVED.** If the 8.0-second deadline approaches and remaining time is < 2.5s prior to synthesis, abort cleanly and return an HTTP 504 Gateway Timeout with structured `ErrorEnvelope`. A synthesis step is never partially evaluated or guessed without LLM execution; a timeout is never conflated with an `insufficient_evidence` verdict.
 
@@ -87,7 +87,7 @@ To maintain focus and engineering velocity, the initial release deliberately exc
 * **When:** The user submits the claim for verification.
 * **Then:**
   1. Stage 1 search returns sources from opinion blogs or initial commentary.
-  2. If Stage 1 evidence is one-sided or disputed, and remaining time ≥ 3.5s, the orchestrator triggers Stage 2 counterevidence retrieval (at most 1 follow-up query).
+  2. Because Stage 1 returned results and remaining time ≥ 3.5s, the orchestrator unconditionally executes Stage 2 dialectical search (using a targeted counterevidence query: `f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"`) to actively seek refutation.
   3. Follow-up search retrieves official releases or scientific reports refuting or qualifying the assertion.
   4. The single synthesis call receives both sets of snippets and tags the disagreement as irreconcilable.
   5. The model assigns the public verdict `mixed`, explaining the methodological or temporal divergence in the summary.
@@ -200,10 +200,10 @@ stateDiagram-v2
     GateA_Screening --> insufficient_evidence: Zero Results / All Quarantined (0 LLM Calls)
     GateA_Screening --> eligible: Structurally Valid Evidence Found
     
-    eligible --> Stage2_Retrieval: One-Sided / Disputed (Time >= 3.5s)
+    eligible --> Stage2_Retrieval: Dialectical Counter-Search (Time >= 3.5s)
     Stage2_Retrieval --> eligible: Counter-Evidence Gathered
     
-    eligible --> Verdict_Synthesis: Single Structured LLM Call (Time >= 1.5s)
+    eligible --> Verdict_Synthesis: Single Structured LLM Call (Time >= 2.5s)
     
     Verdict_Synthesis --> Application_Validation: Model Emits VerificationSynthesisPayload
     
@@ -255,9 +255,9 @@ To prevent syndicated press releases or verbatim wire copies from masquerading a
    - Wire Attribution: Inspect snippet metadata for known wire attribution tokens (`Associated Press`, `Reuters`, `PR Newswire`).
    - Snippets sharing the same registered domain or wire service attribution are assigned identical `source_family_id` tokens.
 2. **Transparent Limitations:** The system recognizes this as *heuristic grouping*, not definitive proof of editorial independence. Unattributed syndication or separate opinion pieces on a single domain represent known boundary cases tested in `evals/`.
-3. **The Two-Domain Corroboration Guardrail:**
-   - To award a public verdict of `supported`, application-level validation requires corroboration across **at least two distinct `source_family_id` clusters** from primary domains.
-   - If evidence is derived from only a single domain (no matter how reputable), the verdict is conservatively capped at `insufficient_evidence` with an explicit note: *"Corroborated by a single source domain; secondary independent corroboration required for supported verdict."*
+3. **The Two-Domain Corroboration and Counterevidence Guardrails:**
+   - **Absence of Unrefuted Counterevidence:** Even when multiple distinct domains support a claim, a public verdict of `supported` is strictly prohibited if any active, validated source has `stance == "refutes"` with direct or contextual relevance. When credible counterevidence exists and is not temporally superseded, the verdict must be downgraded to `mixed` (for genuine empirical divergence) or `contradicted` (if refutation is conclusive), with an explicit limitation: *"Material counterevidence identified in retrieved sources; claim cannot be marked supported while unresolved refuting evidence exists."*
+   - **Two-Domain Minimum Corroboration:** In the confirmed absence of counterevidence, awarding `supported` requires corroboration across **at least two distinct `source_family_id` clusters** from independent domains. If evidence is derived from only a single domain (no matter how reputable), the verdict is conservatively capped at `insufficient_evidence` with an explicit note: *"Corroborated by a single source domain; secondary independent corroboration required for supported verdict."*
 
 ### 6. Network Boundary & Provider Security
 
@@ -356,7 +356,8 @@ CREATE INDEX IF NOT EXISTS idx_verifications_verdict ON verifications(public_ver
 ## Non-Functional Requirements
 
 ### 1. Performance & Latency
-* **Target Latency:** P95 ≤ 3.0s for cached or mock-evidence paths. Live external web search and model inference strictly bounded by an 8.0s synchronous request ceiling.
+* **Target Latency:** P95 ≤ 3.0s for cached or mock-evidence paths. Live external web search and model inference operate under an authoritative 8.0s synchronous request ceiling.
+* **Empirical Latency Budget & SLA Validation:** While stage allocations are defined (0.2s Gate A, 2.3s Search, 2.0s Counter-search, 3.0s Synthesis, 0.5s Buffer), live WAN round-trip latency to Brave and Meta is network-dependent. The architecture treats 8.0s as an unyielding client SLA bounded by deterministic timeout enforcement: if external latency prevents synthesis from starting with ≥ 2.5s remaining, the system guarantees a clean HTTP 504 Gateway Timeout rather than mid-stream hangs. Full empirical validation of live WAN latency distributions across 100+ queries is part of Phase 8 benchmark testing.
 * **Safety Margin:** Stage budgets enforce a mandatory 0.5s safety buffer for orchestration and async SQLite writes.
 * **Minimum Synthesis Window:** At least 2.5s remaining time is required before initiating a model synthesis call; requests falling below this threshold abort cleanly and return an HTTP 504 Gateway Timeout rather than timing out mid-stream.
 
@@ -425,6 +426,7 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
       BRAVE_API_KEY: str = ""
       META_API_KEY: str = ""
       META_API_BASE_URL: str = "https://api.meta.ai/v1"
+      META_MODEL: str = "muse-spark-1.3"
       DATABASE_PATH: str = "data/jintru.db"
       REQUEST_DEADLINE_SECONDS: float = 8.0
       BRAVE_RETRIEVAL_MODE: str = "snippets"  # "snippets" or "context"
@@ -649,9 +651,25 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
       async def synthesize(self, claim: str, snippets: list[dict], timeout: float = 4.0) -> VerificationSynthesisPayload: ...
   ```
 * **`backend/app/providers/brave.py`** (Create):
-  - `BraveSearchProvider`: queries `https://api.search.brave.com/res/v1/web/search`. Supports `mode="snippets"` and optional `mode="context"`.
+  - `BraveSearchProvider(SearchProvider)`:
+    - `mode == "snippets"`: Queries `https://api.search.brave.com/res/v1/web/search` with `count=5` and header `{"X-Subscription-Token": settings.BRAVE_API_KEY}`. Extracts `web.results[]`, mapping `url` to `url`, `title` to `title`, `description` to `snippet`, parsed netloc to `domain`, and `source_type="search_snippet"`.
+    - `mode == "context"`: Queries `https://api.search.brave.com/res/v1/llm/context` with header `{"X-Subscription-Token": settings.BRAVE_API_KEY}`. Parses passages under response payload `grounding.generic[].snippets`, mapping extracted snippet text to `snippet`, corresponding item URL to `url`, title to `title`, parsed netloc to `domain`, and `source_type="llm_context"`.
+    - Common normalization: assigns deterministic `source_id = f"src_{idx+1}"`, extracts `source_family_id` from canonical domain or wire attribution tokens (`Associated Press`, `Reuters`, `PR Newswire`), computes `content_hash = hashlib.sha256(snippet.encode()).hexdigest()`, and sets `retrieved_at = datetime.now(timezone.utc).isoformat()`.
 * **`backend/app/providers/meta.py`** (Create):
-  - `MetaModelProvider`: dispatches structured prompt enforcing `VerificationSynthesisPayload` schema.
+  - `MetaModelProvider(ModelProvider)`:
+    - Dispatches `POST {settings.META_API_BASE_URL}/chat/completions` with headers `{"Authorization": f"Bearer {settings.META_API_KEY}", "Content-Type": "application/json"}`.
+    - Payload explicitly specifies model `settings.META_MODEL` (`muse-spark-1.3`), `temperature: 0.0`, and structured output schema via:
+      ```python
+      response_format = {
+          "type": "json_schema",
+          "json_schema": {
+              "name": "verification_synthesis",
+              "strict": True,
+              "schema": VerificationSynthesisPayload.model_json_schema()
+          }
+      }
+      ```
+    - Parses and validates JSON completion into `VerificationSynthesisPayload`.
 * **`backend/app/providers/mock.py`** (Create):
   - `MockSearchProvider`: returns deterministic search snippets for offline testing.
   - `MockModelProvider`: returns deterministic structured synthesis response based on claim string.
@@ -662,7 +680,10 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
 ### Phase 4: Pipeline Services & Citation Validation
 * **`backend/app/services/verification.py`** (Create):
   - `class VerificationPipeline`:
-    - `classify_input(claim: str) -> Optional[tuple[PublicVerdict, str]]`: Pre-retrieval classification using regex word boundaries: checks for subjective markers (`re.search(r"\b(should|ought|best|worst)\b", claim, re.I)`) or future prediction markers (`re.search(r"\b(will|projected to|by 20[2-9]\d)\b", claim, re.I)` comparing parsed year against `datetime.now(timezone.utc).year`). Returns `("not_verifiable", rationale)` if matched (0 search queries, 0 LLM calls).
+    - `classify_input(claim: str) -> Optional[tuple[PublicVerdict, str]]`: Pre-retrieval classification using conservative, context-aware regex patterns to prevent false positives on entity names (e.g., "Best Buy", "George Best") and historical statements:
+      1. **Subjective Value Judgments:** Flags non-empirical evaluative superlatives in predicate position (`re.search(r"\b(?:is|are|was|were)\s+(?:the\s+)?(?:greatest|best|worst|finest)\s+(?:of\s+all\s+time|in\s+history|ever)\b", claim, re.I)`) or normative moral assertions (`re.search(r"\b(?:morally|ethically)\s+(?:wrong|right|evil|good)\b", claim, re.I)`) or prescriptive social mandates (`re.search(r"\b(?:we|society|people|governments?)\s+(?:ought\s+to|should)\b", claim, re.I)` without statutory/legal context). Standalone proper nouns (e.g., "Best Buy", "George Best") or factual claims ("The film won Best Picture") are never flagged.
+      2. **Prospective Future Predictions:** Only flags statements with explicit future temporal anchors. Extracts 4-digit years (`re.search(r"\b(?:in|by|until|during|through|for)\s+(20[2-9]\d)\b", claim, re.I)`). If extracted year `> datetime.now(timezone.utc).year`, and the statement uses prospective modal verbs (`\b(?:will|shall|projected\s+to|expected\s+to|forecast\s+to)\b`), returns `("not_verifiable", "Future prediction or prospective event; cannot be empirically verified prior to occurrence.")`. Standalone "will" (e.g. "William", "last will and testament", "free will") or past/present factual statements are never flagged.
+      3. **Conservative Fallback:** If pattern match is uncertain, returns `None` to pass the claim to the retrieval pipeline for grounded evaluation.
     - `sanitize_and_quarantine(snippet: str) -> tuple[str, bool]`: Strips control chars and zero-width spaces. Flags injection keywords (`system prompt:`, `override verdict`). Returns `(clean_text, is_quarantined)`.
     - `group_sources(raw_results: list[dict]) -> list[SourceItem]`: Heuristic grouping by canonical domain and wire service attribution. Computes SHA-256 hash. Sets `is_quarantined=False`.
     - `reconcile_synthesis(payload: VerificationSynthesisPayload, sources: list[SourceItem]) -> tuple[list[SourceItem], list[ReasoningStatement]]`: Merges model `source_evaluations` into active `SourceItem` instances (updating `stance`, `relevance`, and `exact_quote`), and maps `exact_quote` to matching `ReasoningStatement.quoted_excerpt`.
@@ -670,7 +691,11 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
       - **Tier 1:** Checks `citation_ids` exist in active sources.
       - **Tier 2:** Normalizes `quoted_excerpt` (`html.unescape()`, whitespace collapse, smart quote normalization) and asserts exact substring presence within cited `SourceItem.snippet`.
     - `apply_verdict_policy(payload: VerificationSynthesisPayload, sources: list[SourceItem]) -> tuple[PublicVerdict, list[str]]`:
-      - If model proposes `supported`: checks count of distinct `source_family_id` clusters with `stance="supports"`. If `< 2`, overrides to `insufficient_evidence` and appends limitation (*"Corroborated by a single source domain; secondary independent corroboration required for supported verdict."*).
+      - Validates proposed verdict against active sources:
+        1. **Absence of Unrefuted Counterevidence:** If model proposes `supported`, scan `sources` for any item with `stance == "refutes"` and `relevance in ("direct", "contextual")`. If found, reject `supported`: downgrade to `mixed` (or `contradicted` if refutation is decisive) and append limitation (*"Material counterevidence identified in retrieved sources; claim cannot be marked supported while unresolved refuting evidence exists."*).
+        2. **Two-Domain Corroboration Guardrail:** If model proposes `supported` (and counterevidence check passes), count distinct `source_family_id` clusters where `stance == "supports"` and `relevance in ("direct", "contextual")`. If `< 2`, override verdict to `insufficient_evidence` and append limitation (*"Corroborated by a single source domain; secondary independent corroboration required for supported verdict."*).
+        3. **Contradiction Grounding Rule:** If model proposes `contradicted`, verify at least one source has `stance == "refutes"` with `relevance == "direct"`. If no direct refutation exists, downgrade to `insufficient_evidence`.
+        4. **Conflict Verification:** If model proposes `mixed`, verify presence of at least one supporting and one refuting source.
     - `async def verify(claim: str) -> VerificationResponse`: Monotonic clock-bounded orchestrator executing pre-classification, Gate A, Stage 1 search (2.3s ceiling, 2.0s subordinate timeout), unconditional Stage 2 dialectical counter-search if `remaining_time >= 3.5s` and Stage 1 found results (`f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"`), 2.5s minimum synthesis window guard (raising `ProviderTimeoutError` -> HTTP 504 if time < 2.5s), synthesis, reconciliation, citation validation, application validation, and SQLite persistence.
 * **Exit Check Phase 4:** Deterministic unit tests covering Tier 1/2 citation validation, normalization edge cases, and empty snippet short-circuiting.
 
@@ -715,7 +740,7 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
     "devDependencies": {
       "@eslint/js": "^9.15.0",
       "@playwright/test": "^1.48.0",
-      "@tailwindcss/vite": "^4.0.0-beta.4",
+      "@tailwindcss/vite": "^4.0.0",
       "@types/node": "^22.0.0",
       "@types/react": "^19.0.0",
       "@types/react-dom": "^19.0.0",
@@ -724,7 +749,7 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
       "eslint-plugin-react-hooks": "^5.0.0",
       "eslint-plugin-react-refresh": "^0.4.14",
       "openapi-typescript": "^7.4.0",
-      "tailwindcss": "^4.0.0-beta.4",
+      "tailwindcss": "^4.0.0",
       "typescript": "^5.6.0",
       "typescript-eslint": "^8.15.0",
       "vite": "^6.0.0",
@@ -764,18 +789,19 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
 
 ---
 
-### Phase 8: Offline Evaluation Benchmark Harness
+### Phase 8: Offline Evaluation Benchmark Harness & Live SLA Validation
 * **`evals/cases.jsonl`** (Create):
   Curated benchmark cases with schema:
   ```json
   {"case_id": "cov_01", "claim": "Atmospheric CO2 reached 426.9 ppm at Mauna Loa in May 2024", "category": "empirical", "ground_truth_verdict": "supported", "expected_stance_map": {"src_1": "supports"}, "known_evidence": [{"source_id": "src_1", "text": "..."}]}
   ```
 * **`evals/run_evals.py`** (Create):
-  Benchmark harness measuring fixed-evidence reasoning and live retrieval.
+  Benchmark harness measuring fixed-evidence reasoning, live retrieval, and latency distributions.
   **Quantitative CI Pass Criteria:**
   - Citation Entailment Precision: ≥ 90%
   - False-Support Rate under Absent Evidence: ≤ 5%
   - Counterevidence Recall: ≥ 80%
+  - SLA & Latency Compliance: Live retrieval P95 latency distribution tracked; 100% of injected latency overruns (< 2.5s synthesis window) degrade cleanly to HTTP 504 Gateway Timeout.
 * **Exit Check Phase 8:** `PYTHONPATH=backend python evals/run_evals.py --cases evals/cases.jsonl` completes with metrics meeting or exceeding all thresholds.
 
 --------------------------------------------------------------------------------
@@ -796,5 +822,5 @@ The implementation is partitioned into **8 sequential build phases**. Each phase
   * Execute concurrent read/write test asserting 0 `OperationalError: database is locked` exceptions under 10 parallel tasks.
 * **End-to-End User Journeys:**
   * Execute `npm --prefix frontend run test:e2e -- --project=chromium --project=firefox` validating CUJ 1 and CUJ 3.
-* **Semantic Factuality & Robustness Benchmark:**
-  * Execute `PYTHONPATH=backend python evals/run_evals.py --cases evals/cases.jsonl` verifying that fixed-evidence reasoning meets agreed baseline thresholds (precision ≥ 0.90, false-support ≤ 0.05).
+* **Semantic Factuality, Robustness & SLA Benchmark:**
+  * Execute `PYTHONPATH=backend python evals/run_evals.py --cases evals/cases.jsonl` verifying that fixed-evidence reasoning meets agreed baseline thresholds (precision ≥ 0.90, false-support ≤ 0.05) and live WAN latency degradation enforces HTTP 504 error envelopes.

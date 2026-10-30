@@ -152,11 +152,11 @@ The baseline bibliography is classified by publication type, evaluation setting,
   * **Heuristic Source Grouping:** Group snippets sharing the same registered domain or wire service attribution into a shared `source_family_id`. Repeated reporting within the same family is never treated as independent corroboration.
   * **Sequential Two-Stage Execution:**
     1. *Stage 1 (Initial Search):* Exactly 1 focused query against Brave Search API (`/res/v1/web/search`) retrieving top 5 snippets.
-    2. *Stage 2 (Targeted Counterevidence):* At most 1 counterevidence query, triggered *only* when Stage 1 evidence is one-sided or disputed, and remaining request time is ≥ 3.5s.
+    2. *Stage 2 (Targeted Counterevidence):* Exactly 1 dialectical counterevidence query (`f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"`), executed unconditionally whenever Stage 1 returns results and remaining request time is ≥ 3.5s.
   * **Authoritative Request Deadline (8.0 Seconds Target):**
     * A single deadline is created at request entry: `deadline = now() + 8.0s`.
-    * Stage-level time budgeting: Pre-Classification & Gate A (max 0.2s), Stage 1 Search (max 2.5s), Stage 2 Counter-Search (max 2.0s), Single Synthesis Call (max 3.0s), Storage & Safety Buffer (0.3s). Sum = 8.0s.
-    * Minimum remaining-time threshold: At least 1.5s remaining is required before initiating a model synthesis call. If remaining time is < 1.5s, return HTTP 504 Gateway Timeout or a structured partial response with limitations.
+    * Stage-level time budgeting: Pre-Classification & Gate A (max 0.2s), Stage 1 Search (max 2.3s, subordinate timeout 2.0s), Stage 2 Counter-Search (max 2.0s), Single Synthesis Call (max 3.0s), Storage & Safety Buffer (0.5s). Sum = 8.0s.
+    * Minimum remaining-time threshold: At least 2.5s remaining is required before initiating a model synthesis call. If remaining time is < 2.5s, cleanly abort and return HTTP 504 Gateway Timeout with structured `ErrorEnvelope`.
 * **Consequences:** Prevents budget overruns; guarantees strict 8.0-second wall-clock termination; eliminates HTTP 429 rate limit spikes.
 
 ### ADR-002: Evidence Sufficiency Gate, Pre-Retrieval Classification & 5-Way Verdict Taxonomy
@@ -165,8 +165,8 @@ The baseline bibliography is classified by publication type, evaluation setting,
   * **Internal States:** `eligible`, `needs_more_evidence`, `insufficient_evidence`, `not_verifiable`.
   * **Public API Verdicts (5-Way):** `supported`, `contradicted`, `mixed`, `insufficient_evidence`, `not_verifiable`.
   * **Gate A Pre-Retrieval Deterministic Screening:**
-    * *Subjective Value Judgments:* Detects normative markers (`should`, `ought`, `best`, `worst`). Routes immediately to public verdict `not_verifiable` (0 search calls, 0 LLM calls).
-    * *Future Predictions:* Detects prospective markers (`will`, `by 2028`, `projected to`). Routes immediately to public verdict `not_verifiable` with explanation that future events cannot be empirically verified prior to occurrence (0 search calls, 0 LLM calls).
+    * *Subjective Value Judgments:* Conservative context-aware regex screening for non-empirical evaluative superlatives (e.g., "greatest of all time") or normative moral prescriptions without statutory context. Proper nouns (e.g., "Best Buy", "George Best") are never flagged. Routes immediately to public verdict `not_verifiable` (0 search calls, 0 LLM calls).
+    * *Future Predictions:* Detects explicit future temporal anchors (year > current UTC year) paired with prospective modal verbs ("will reach", "projected to"). Standalone "will" or historical statements are never flagged. Routes immediately to public verdict `not_verifiable` with explanation that future events cannot be empirically verified prior to occurrence (0 search calls, 0 LLM calls).
     * *Empty Results Short-Circuit:* If Stage 1 search yields zero relevant snippets, short-circuits immediately to `insufficient_evidence` with 0 external LLM calls.
   * **Single Structured Synthesis LLM Round-Trip:**
     * When usable evidence exists, dispatches a single structured prompt to the Meta Model API with schema `VerificationSynthesisPayload`.

@@ -64,9 +64,16 @@ The following matrix records every defect identified across Stages 6–9 and doc
 | **IR-07** | Stage 9 (Quality) | 🟡 Major | Missing offline testing toggle in application configuration. | Added `USE_MOCK_PROVIDERS: bool = False` to `Settings` in `backend/app/core/config.py`. | ✅ Resolved |
 | **IR-08** | Stage 9 (Tech Lead) | 🟡 Major | Deprecated FastAPI startup/shutdown events. | Replaced startup hooks with modern `@asynccontextmanager async def lifespan(app: FastAPI)` handler. | ✅ Resolved |
 | **IR-09** | Stage 9 (Quality) | 🟡 Major | Curated benchmark cases lacked expected stance mapping schema. | Added `expected_stance_map: dict[str, str]` to `evals/cases.jsonl` benchmark schema. | ✅ Resolved |
-| **IR-10** | Stage 9 (Quality) | 🟢 Nit | Naive substring matching in `classify_input` prone to false positives. | Enforced regex word boundaries `\b(should|ought|best|worst)\b` and dynamic year comparison against `datetime.now(timezone.utc).year`. | ✅ Resolved |
+| **IR-10** | Stage 9 (Quality) | 🟢 Nit | Naive substring matching in `classify_input` prone to false positives on entities (e.g. "Best Buy") and historical statements. | Replaced naive keywords with conservative context-aware regex patterns protecting proper nouns and historical statements; uncertain claims fall back to pipeline. | ✅ Resolved |
 | **IR-11** | Stage 9 (Copy Editor) | 🟢 Nit | Incomplete color token mapping for 5-way verdict badge. | Explicitly defined color tokens and semantic icon pairings for all 5 public verdicts (`emerald`, `rose`, `amber`, `slate`, `indigo`). | ✅ Resolved |
 | **IR-12** | Stage 9 (Quality) | 🟢 Nit | Missing `semgrep` dev dependency in `pyproject.toml`. | Added `semgrep>=1.80.0` to dev dependencies table. | ✅ Resolved |
+| **IR-13** | Audit Convergence | 🔴 Blocker | Verdict policy checked 2 supporting source families but omitted mandatory absence of unrefuted counterevidence. | Enforced in Section 3.5 and Phase 4: `supported` is strictly prohibited if any active source has `stance == "refutes"` with direct/contextual relevance; downgrades to `mixed` or `contradicted`. | ✅ Resolved |
+| **IR-14** | Audit Convergence | 🔴 Blocker | Stale conditional counter-search ("one-sided or disputed") and 1.5s synthesis window remained in CUJ 2 and state diagram. | Updated CUJ 2 and state diagram to unconditional dialectical counter-search (`Time >= 3.5s`) and 2.5s synthesis window. | ✅ Resolved |
+| **IR-15** | Audit Convergence | 🔴 Blocker | `docs/designs/concepts_brief.md` described superseded architecture (MinHash, custom socket IP-pinning, Gate B). | Completely rewrote `concepts_brief.md` to reflect the approved Milestone 1 converged architecture. | ✅ Resolved |
+| **IR-16** | Audit Convergence | 🟡 Major | Brave LLM Context endpoint response structure lacked explicit mapping into `SourceItem` contract. | Specified field mapping in Phase 3 (`BraveSearchProvider`) for both `mode="snippets"` and `mode="context"` (`grounding.generic[].snippets`). | ✅ Resolved |
+| **IR-17** | Audit Convergence | 🟡 Major | 8.0-second synchronous SLA was defined as an operational budget but unvalidated against live WAN latency. | Clarified SLA governance: fail-safe HTTP 504 degradation under live network spikes, with WAN latency distribution benchmarks specified in Phase 8. | ✅ Resolved |
+| **IR-18** | Audit Finalization | 🔴 Blocker | Meta Model API discovery, family selection, and request schema left open in OQ-3. | Locked OQ-3, added `META_MODEL = "muse-spark-1.3"` to `config.py`, and detailed `response_format` JSON schema payload in `meta.py`. | ✅ Resolved |
+| **IR-19** | Audit Finalization | 🟢 Nit | Frontend dependencies specified pre-release Tailwind beta versions (`^4.0.0-beta.4`). | Updated `frontend/package.json` to stable `^4.0.0` releases for `tailwindcss` and `@tailwindcss/vite`. | ✅ Resolved |
 
 ---
 
@@ -75,7 +82,7 @@ The following matrix records every defect identified across Stages 6–9 and doc
 With the approval of this design, the following architectural invariants are locked:
 
 1. **Deterministic Latency Budget:** Request processing is strictly bounded by an authoritative 8.0-second wall-clock ceiling. Every external call enforces a subordinate timeout. If synthesis cannot begin with at least 2.5 seconds remaining, the system aborts cleanly and returns an HTTP 504 Gateway Timeout.
-2. **Two-Domain Corroboration Guardrail:** The system refuses to award a `supported` public verdict based on a single source domain. At least two distinct primary `source_family_id` clusters with direct supporting stance and zero unrefuted counterevidence are required.
+2. **Two-Domain Corroboration & Counterevidence Guardrail:** The system strictly refuses to award `supported` if credible, relevant counterevidence remains unresolved in retrieved sources, or if evidence comes from only a single domain. At least two distinct primary `source_family_id` clusters with direct supporting stance and zero unrefuted counterevidence are required.
 3. **Three-Tier Citation Validation:**
    - **Tier 1 (Structural):** Every cited source ID must exist in active retrieved sources.
    - **Tier 2 (Provenance):** Every quoted reasoning excerpt must match normalized snippet text verbatim.
