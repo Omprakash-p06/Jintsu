@@ -21,7 +21,7 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 
 ## Phases
 
-- [ ] **Phase 1: Foundations, Data Contracts & External Providers** - Core Python 3.12 dependencies, Pydantic schemas, SQLite WAL persistence, and Brave Search / Meta Model provider adapters.
+- [x] **Phase 1: Foundations, Data Contracts & External Providers** - Core Python 3.12 dependencies, Pydantic schemas, SQLite WAL persistence, and Brave Search / Meta Model provider adapters.
 - [ ] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy, and FastAPI routes.
 - [ ] **Phase 3: React Workbench UI & Full-Stack Integration** - React 19 + TypeScript 5.6 + stable Tailwind CSS v4 workbench application, 5-way verdict badge, evidence cards, and history drawer.
 - [ ] **Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking** - Automated unit/integration tests, Playwright E2E tests, security audits, and quantitative offline/live evaluation benchmarks.
@@ -51,8 +51,8 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
   6. Deterministic mock search and model providers in `mock.py` return valid data for offline testing.
 
 **Plans**: 2 plans
-- [ ] 01-01: Backend scaffolding, configuration, Pydantic data schemas, and concurrency-safe SQLite persistence.
-- [ ] 01-02: External provider interfaces, Brave Search adapter (snippets + context), Meta Model API adapter, and deterministic mocks.
+- [x] 01-01: Backend scaffolding, configuration, Pydantic data schemas, and concurrency-safe SQLite persistence.
+- [x] 01-02: External provider interfaces, Brave Search adapter (snippets + context), Meta Model API adapter, and deterministic mocks.
 
 ---
 

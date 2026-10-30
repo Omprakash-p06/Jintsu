@@ -21,12 +21,12 @@
 
 ### Backend Foundations & Data Contracts
 
-- [ ] **FOUND-01**: Project scaffolding in `backend/pyproject.toml` with Python 3.12, FastAPI, Pydantic v2, `aiosqlite`, and clean dev tooling passing `ruff` and `pyright`.
-- [ ] **FOUND-02**: Typed configuration in `backend/app/core/config.py` with `Settings` capturing `BRAVE_API_KEY`, `META_API_KEY`, `META_API_BASE_URL`, `META_MODEL` (`muse-spark-1.3`), `REQUEST_DEADLINE_SECONDS` (8.0s), and `USE_MOCK_PROVIDERS`.
-- [ ] **FOUND-03**: Core Pydantic data schemas in `backend/app/api/schemas.py` including `VerificationRequest`, `SourceItem` (with `is_quarantined`, `relevance`, `exact_quote`), `ReasoningStatement` (with `quoted_excerpt`), `VerificationSynthesisPayload`, `VerificationResponse`, and `ErrorEnvelope`.
-- [ ] **DATA-01**: SQLite WAL persistence in `backend/app/db/database.py` with dedicated `@asynccontextmanager _connect()` executing connection-scoped `PRAGMA busy_timeout = 5000;` and `PRAGMA synchronous = NORMAL;`, bounded write retry, and JSON deserialization in `get_verification()`.
-- [ ] **PROV-01**: `BraveSearchProvider` in `backend/app/providers/brave.py` supporting `mode="snippets"` (`/res/v1/web/search`) and `mode="context"` (`/res/v1/llm/context` mapping `grounding.generic[].snippets` to `SourceItem`), with SHA-256 content hashes and domain/wire clustering.
-- [ ] **PROV-02**: `MetaModelProvider` in `backend/app/providers/meta.py` locked to `muse-spark-1.3` with `response_format` JSON schema matching `VerificationSynthesisPayload`, alongside deterministic mock providers in `mock.py`.
+- [x] **FOUND-01**: Project scaffolding in `backend/pyproject.toml` with Python 3.12, FastAPI, Pydantic v2, `aiosqlite`, and clean dev tooling passing `ruff` and `pyright`.
+- [x] **FOUND-02**: Typed configuration in `backend/app/core/config.py` with `Settings` capturing `BRAVE_API_KEY`, `META_API_KEY`, `META_API_BASE_URL`, `META_MODEL` (`muse-spark-1.3`), `REQUEST_DEADLINE_SECONDS` (8.0s), and `USE_MOCK_PROVIDERS`.
+- [x] **FOUND-03**: Core Pydantic data schemas in `backend/app/api/schemas.py` including `VerificationRequest`, `SourceItem` (with `is_quarantined`, `relevance`, `exact_quote`), `ReasoningStatement` (with `quoted_excerpt`), `VerificationSynthesisPayload`, `VerificationResponse`, and `ErrorEnvelope`.
+- [x] **DATA-01**: SQLite WAL persistence in `backend/app/db/database.py` with dedicated `@asynccontextmanager _connect()` executing connection-scoped `PRAGMA busy_timeout = 5000;` and `PRAGMA synchronous = NORMAL;`, bounded write retry, and JSON deserialization in `get_verification()`.
+- [x] **PROV-01**: `BraveSearchProvider` in `backend/app/providers/brave.py` supporting `mode="snippets"` (`/res/v1/web/search`) and `mode="context"` (`/res/v1/llm/context` mapping `grounding.generic[].snippets` to `SourceItem`), with SHA-256 content hashes and domain/wire clustering.
+- [x] **PROV-02**: `MetaModelProvider` in `backend/app/providers/meta.py` locked to `muse-spark-1.3` with `response_format` JSON schema matching `VerificationSynthesisPayload`, alongside deterministic mock providers in `mock.py`.
 
 ### Verification Pipeline & Engine
 
