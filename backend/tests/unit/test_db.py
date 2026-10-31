@@ -26,7 +26,6 @@ async def test_database_init_and_pragmas(db: Database):
         assert row is not None and row[0] == 5000
 
         cursor = await conn.execute("PRAGMA synchronous;")
-        row = await conn.execute("PRAGMA synchronous;")
         row = await cursor.fetchone()
         # NORMAL synchronous corresponds to 1 in SQLite
         assert row is not None and row[0] == 1
@@ -133,3 +132,28 @@ async def test_delete_and_purge_verifications(db: Database):
     all_items, total = await db.list_verifications()
     assert total == 0
     assert len(all_items) == 0
+
+
+async def test_non_contention_error_fails_fast(tmp_path: Path):
+    import sqlite3
+    import time
+
+    # Database without init_db will raise 'no such table'
+    uninit_db = Database(db_path=str(tmp_path / "uninit.db"))
+    record = VerificationResponse(
+        id="v_fail",
+        claim="Claim to fail.",
+        public_verdict="insufficient_evidence",
+        summary="Summary.",
+        limitations=[],
+        sources=[],
+        reasoning=[],
+        created_at="2026-10-31T00:00:00Z",
+    )
+    start = time.monotonic()
+    with pytest.raises(sqlite3.OperationalError) as exc_info:
+        await uninit_db.save_verification(record)
+    duration = time.monotonic() - start
+    assert "no such table" in str(exc_info.value).lower()
+    # Fails fast in < 0.05s without 3 exponential backoff sleeps (~0.15s)
+    assert duration < 0.1

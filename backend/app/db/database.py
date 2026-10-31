@@ -11,22 +11,43 @@ from app.core.config import settings
 
 
 class Database:
-    def __init__(self, db_path: str = settings.DATABASE_PATH):
-        self.db_path = db_path
+    def __init__(self, db_path: str | None = None):
+        self.db_path = db_path or settings.DATABASE_PATH
         if self.db_path != ":memory:":
             Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def _is_contention(exc: Exception) -> bool:
+        msg = str(exc).lower()
+        return "locked" in msg or "busy" in msg
 
     @asynccontextmanager
     async def _connect(self):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("PRAGMA busy_timeout = 5000;")
             await db.execute("PRAGMA synchronous = NORMAL;")
+            await db.execute("PRAGMA journal_mode = WAL;")
             db.row_factory = aiosqlite.Row
             yield db
 
+    async def _with_write_retry(self, coro_fn):
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                async with self._connect() as db:
+                    result = await coro_fn(db)
+                    await db.commit()
+                    return result
+            except sqlite3.OperationalError as exc:
+                if not self._is_contention(exc):
+                    raise
+                last_exc = exc
+                await asyncio.sleep(0.05 * (2**attempt))
+        if last_exc:
+            raise last_exc
+
     async def init_db(self) -> None:
         async with self._connect() as db:
-            await db.execute("PRAGMA journal_mode=WAL;")
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS verifications (
                     id TEXT PRIMARY KEY,
@@ -49,35 +70,29 @@ class Database:
             await db.commit()
 
     async def save_verification(self, record: VerificationResponse) -> None:
-        for attempt in range(3):
-            try:
-                async with self._connect() as db:
-                    await db.execute(
-                        """
-                        INSERT INTO verifications (
-                            id, claim, status, public_verdict, summary,
-                            limitations, sources, reasoning, created_at
-                        )
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    """,
-                        (
-                            record.id,
-                            record.claim,
-                            "completed",
-                            record.public_verdict,
-                            record.summary,
-                            json.dumps(record.limitations),
-                            json.dumps([s.model_dump() for s in record.sources]),
-                            json.dumps([r.model_dump() for r in record.reasoning]),
-                            record.created_at,
-                        ),
-                    )
-                    await db.commit()
-                    return
-            except sqlite3.OperationalError:
-                if attempt == 2:
-                    raise
-                await asyncio.sleep(0.05 * (2**attempt))
+        async def _op(db: aiosqlite.Connection):
+            await db.execute(
+                """
+                INSERT INTO verifications (
+                    id, claim, status, public_verdict, summary,
+                    limitations, sources, reasoning, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    record.id,
+                    record.claim,
+                    "completed",
+                    record.public_verdict,
+                    record.summary,
+                    json.dumps(record.limitations),
+                    json.dumps([s.model_dump() for s in record.sources]),
+                    json.dumps([r.model_dump() for r in record.reasoning]),
+                    record.created_at,
+                ),
+            )
+
+        await self._with_write_retry(_op)
 
     async def get_verification(self, id: str) -> dict | None:
         async with (
@@ -119,12 +134,15 @@ class Database:
                 return [dict(r) for r in rows], total
 
     async def delete_verification(self, id: str) -> bool:
-        async with self._connect() as db:
+        async def _op(db: aiosqlite.Connection) -> bool:
             cursor = await db.execute("DELETE FROM verifications WHERE id = ?", (id,))
-            await db.commit()
             return cursor.rowcount > 0
 
+        res = await self._with_write_retry(_op)
+        return bool(res)
+
     async def purge_verifications(self) -> None:
-        async with self._connect() as db:
+        async def _op(db: aiosqlite.Connection) -> None:
             await db.execute("DELETE FROM verifications")
-            await db.commit()
+
+        await self._with_write_retry(_op)

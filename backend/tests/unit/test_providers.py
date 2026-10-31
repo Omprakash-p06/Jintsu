@@ -73,8 +73,12 @@ def test_strict_json_schema():
     assert set(schema.get("required", [])) == set(schema.get("properties", {}).keys())
 
     for def_name, def_schema in schema.get("$defs", {}).items():
-        assert def_schema.get("additionalProperties") is False, f"$defs[{def_name}] missing additionalProperties: False"
-        assert set(def_schema.get("required", [])) == set(def_schema.get("properties", {}).keys()), f"$defs[{def_name}] incomplete required list"
+        assert def_schema.get("additionalProperties") is False, (
+            f"$defs[{def_name}] missing additionalProperties: False"
+        )
+        assert set(def_schema.get("required", [])) == set(
+            def_schema.get("properties", {}).keys()
+        ), f"$defs[{def_name}] incomplete required list"
 
 
 def test_provider_factory():
