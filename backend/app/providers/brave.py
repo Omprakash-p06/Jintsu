@@ -58,7 +58,21 @@ class BraveSearchProvider(SearchProvider):
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     response = await client.get(url, params=params, headers=headers)
             response.raise_for_status()
-            data = response.json()
+            try:
+                data = response.json()
+            except ValueError as exc:
+                raise ProviderUnavailableError(
+                    "Brave returned a malformed JSON body",
+                    code="BRAVE_UNAVAILABLE",
+                    detail=str(exc),
+                ) from exc
+
+            if not isinstance(data, dict):
+                raise ProviderUnavailableError(
+                    "Brave response payload is not an object",
+                    code="BRAVE_UNAVAILABLE",
+                    detail=f"got {type(data).__name__}",
+                )
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError(
                 "Brave search request timed out",
@@ -74,19 +88,24 @@ class BraveSearchProvider(SearchProvider):
 
         raw_items: list[dict] = []
         if mode == "context":
-            generic = data.get("grounding", {}).get("generic", [])
+            generic = (data.get("grounding") or {}).get("generic") or []
             for item in generic:
+                if not isinstance(item, dict):
+                    continue
+                snippets_list = item.get("snippets") or []
                 raw_items.append(
                     {
                         "url": item.get("url", ""),
                         "title": item.get("title", ""),
-                        "snippet": "\n\n".join(item.get("snippets", [])),
+                        "snippet": "\n\n".join(s for s in snippets_list if isinstance(s, str)),
                         "source_type": "llm_context",
                     }
                 )
         else:
-            results = data.get("web", {}).get("results", [])
+            results = (data.get("web") or {}).get("results") or []
             for item in results:
+                if not isinstance(item, dict):
+                    continue
                 raw_items.append(
                     {
                         "url": item.get("url", ""),
@@ -127,6 +146,7 @@ class BraveSearchProvider(SearchProvider):
                     "retrieved_at": now_iso,
                     "source_type": item.get("source_type", "search_snippet"),
                     "extraction_status": status,
+                    # Phase 4 tracking: prompt-injection quarantine (is_quarantined) per SSOT line 687
                     "is_quarantined": False,
                 }
             )

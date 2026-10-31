@@ -105,7 +105,21 @@ class MetaModelProvider(ModelProvider):
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     response = await client.post(url, json=payload, headers=headers)
             response.raise_for_status()
-            data = response.json()
+            try:
+                data = response.json()
+            except ValueError as exc:
+                raise ProviderUnavailableError(
+                    "Meta model returned a malformed JSON body",
+                    code="META_UNAVAILABLE",
+                    detail=str(exc),
+                ) from exc
+
+            if not isinstance(data, dict):
+                raise ProviderUnavailableError(
+                    "Meta model response payload is not an object",
+                    code="META_UNAVAILABLE",
+                    detail=f"got {type(data).__name__}",
+                )
         except httpx.TimeoutException as exc:
             raise ProviderTimeoutError(
                 "Meta model synthesis timed out",
@@ -120,8 +134,31 @@ class MetaModelProvider(ModelProvider):
             ) from exc
 
         try:
-            content = data["choices"][0]["message"]["content"]
-            return VerificationSynthesisPayload.model_validate_json(content)
+            choices = data.get("choices")
+            if not isinstance(choices, list) or not choices:
+                raise ValueError("Response missing non-empty 'choices' list")
+            first_choice = choices[0]
+            if not isinstance(first_choice, dict):
+                raise TypeError("Response 'choices[0]' is not an object")
+            message = first_choice.get("message")
+            if not isinstance(message, dict):
+                raise TypeError("Response 'choices[0].message' is not an object")
+            content = message.get("content")
+            if not isinstance(content, str):
+                raise TypeError(
+                    f"Response message content is not a string (got {type(content).__name__})"
+                )
+
+            cleaned = content.strip()
+            if cleaned.startswith("```"):
+                lines = cleaned.splitlines()
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].strip() == "```":
+                    lines = lines[:-1]
+                cleaned = "\n".join(lines).strip()
+
+            return VerificationSynthesisPayload.model_validate_json(cleaned)
         except Exception as exc:
             raise ProviderUnavailableError(
                 "Failed to parse synthesis payload from Meta model response",

@@ -25,7 +25,6 @@ def test_abstract_interfaces():
         ModelProvider()  # type: ignore
 
 
-@pytest.mark.asyncio
 async def test_mock_search_provider():
     provider = MockSearchProvider()
     results = await provider.search(query="climate change", count=5, mode="snippets")
@@ -44,7 +43,6 @@ async def test_mock_search_provider():
     assert sliced[0]["source_id"] == "src_1"
 
 
-@pytest.mark.asyncio
 async def test_mock_model_provider():
     provider = MockModelProvider()
 
@@ -93,7 +91,6 @@ def test_provider_factory():
     assert isinstance(get_model_provider(live_settings), MetaModelProvider)
 
 
-@pytest.mark.asyncio
 async def test_brave_search_snippets_mode():
     def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url).startswith("https://api.search.brave.com/res/v1/web/search")
@@ -133,7 +130,6 @@ async def test_brave_search_snippets_mode():
     assert results[1]["source_family_id"] == "associated_press"
 
 
-@pytest.mark.asyncio
 async def test_brave_search_context_mode_and_slicing():
     def handler(request: httpx.Request) -> httpx.Response:
         assert str(request.url).startswith("https://api.search.brave.com/res/v1/llm/context")
@@ -179,7 +175,6 @@ async def test_brave_search_context_mode_and_slicing():
     assert results[1]["source_family_id"] == "bbc.com"
 
 
-@pytest.mark.asyncio
 async def test_brave_search_word_boundary_wire_tokens():
     def handler(request: httpx.Request) -> httpx.Response:
         body = {
@@ -211,7 +206,6 @@ async def test_brave_search_word_boundary_wire_tokens():
     assert results[1]["source_family_id"] == "associated_press"
 
 
-@pytest.mark.asyncio
 async def test_brave_search_error_handling():
     # Timeout
     def timeout_handler(request: httpx.Request) -> httpx.Response:
@@ -236,7 +230,6 @@ async def test_brave_search_error_handling():
         assert exc_info.value.code == "BRAVE_UNAVAILABLE"
 
 
-@pytest.mark.asyncio
 async def test_brave_search_invalid_mode():
     provider = BraveSearchProvider(api_key="mock_key")
     with pytest.raises(RequestConstraintError) as exc_info:
@@ -244,7 +237,6 @@ async def test_brave_search_invalid_mode():
     assert exc_info.value.code == "BRAVE_BAD_MODE"
 
 
-@pytest.mark.asyncio
 async def test_meta_model_provider_synthesis():
     received_payload = {}
 
@@ -302,7 +294,6 @@ async def test_meta_model_provider_synthesis():
     assert result.reasoning_statements[0].quoted_excerpt == "empirical evidence"
 
 
-@pytest.mark.asyncio
 async def test_meta_model_error_handling():
     # Timeout
     def timeout_handler(request: httpx.Request) -> httpx.Response:
@@ -325,3 +316,76 @@ async def test_meta_model_error_handling():
         with pytest.raises(ProviderUnavailableError) as exc_info:
             await provider_401.synthesize("claim", [])
         assert exc_info.value.code == "META_UNAVAILABLE"
+
+
+async def test_brave_search_malformed_json_and_null_shapes():
+    # Malformed non-JSON body
+    transport_malformed = httpx.MockTransport(lambda req: httpx.Response(200, text="Not JSON"))
+    async with httpx.AsyncClient(transport=transport_malformed) as client:
+        provider = BraveSearchProvider(api_key="mock_key", client=client)
+        with pytest.raises(ProviderUnavailableError) as exc:
+            await provider.search("query")
+        assert exc.value.code == "BRAVE_UNAVAILABLE"
+
+    # Non-dict JSON body
+    transport_nondict = httpx.MockTransport(
+        lambda req: httpx.Response(200, json=["unexpected", "array"])
+    )
+    async with httpx.AsyncClient(transport=transport_nondict) as client:
+        provider = BraveSearchProvider(api_key="mock_key", client=client)
+        with pytest.raises(ProviderUnavailableError) as exc:
+            await provider.search("query")
+        assert exc.value.code == "BRAVE_UNAVAILABLE"
+
+    # Null shapes in grounding and web do not raise AttributeError
+    transport_null_web = httpx.MockTransport(lambda req: httpx.Response(200, json={"web": None}))
+    async with httpx.AsyncClient(transport=transport_null_web) as client:
+        provider = BraveSearchProvider(api_key="mock_key", client=client)
+        res = await provider.search("query", mode="snippets")
+        assert res == []
+
+    transport_null_grounding = httpx.MockTransport(
+        lambda req: httpx.Response(200, json={"grounding": None})
+    )
+    async with httpx.AsyncClient(transport=transport_null_grounding) as client:
+        provider = BraveSearchProvider(api_key="mock_key", client=client)
+        res = await provider.search("query", mode="context")
+        assert res == []
+
+
+async def test_meta_model_malformed_json_and_fenced_content():
+    # Malformed non-JSON response
+    transport_malformed = httpx.MockTransport(
+        lambda req: httpx.Response(200, text="<!DOCTYPE html>Error")
+    )
+    async with httpx.AsyncClient(transport=transport_malformed) as client:
+        provider = MetaModelProvider(api_key="mock_key", client=client)
+        with pytest.raises(ProviderUnavailableError) as exc:
+            await provider.synthesize("claim", [])
+        assert exc.value.code == "META_UNAVAILABLE"
+
+    # Missing or empty choices
+    transport_no_choices = httpx.MockTransport(
+        lambda req: httpx.Response(200, json={"choices": []})
+    )
+    async with httpx.AsyncClient(transport=transport_no_choices) as client:
+        provider = MetaModelProvider(api_key="mock_key", client=client)
+        with pytest.raises(ProviderUnavailableError) as exc:
+            await provider.synthesize("claim", [])
+        assert exc.value.code == "META_PARSE_ERROR"
+
+    # Markdown code-fenced JSON content unpacking
+    fenced_content = """```json
+{
+    "proposed_verdict": "contradicted",
+    "summary": "Falsified by observation.",
+    "source_evaluations": [],
+    "reasoning_statements": []
+}
+```"""
+    body = {"choices": [{"message": {"role": "assistant", "content": fenced_content}}]}
+    transport_fenced = httpx.MockTransport(lambda req: httpx.Response(200, json=body))
+    async with httpx.AsyncClient(transport=transport_fenced) as client:
+        provider = MetaModelProvider(api_key="mock_key", client=client)
+        res = await provider.synthesize("claim", [])
+        assert res.proposed_verdict == "contradicted"
