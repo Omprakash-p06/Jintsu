@@ -40,3 +40,4 @@ Successfully established the Python 3.12 backend repository scaffolding, core co
 ## 4. Deviations & Observations
 - Pinned `semgrep` out of immediate pip dev bundle due to PyPI backtracking resolver delays; all core runtime, test, and type-checking dependencies (`pytest`, `ruff`, `pyright`, `aiosqlite`) installed cleanly.
 - Added root `.gitignore` to prevent committing virtual environment artifacts and caches.
+

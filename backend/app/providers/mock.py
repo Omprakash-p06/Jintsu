@@ -18,7 +18,7 @@ class MockSearchProvider(SearchProvider):
         query: str,
         count: int = 5,
         mode: str = "snippets",
-        timeout: float = 3.0,
+        timeout: float = 2.0,
     ) -> list[dict]:
         if self.custom_fixtures is not None:
             return self.custom_fixtures[:count]
@@ -72,7 +72,7 @@ class MockModelProvider(ModelProvider):
         self,
         claim: str,
         snippets: list[dict],
-        timeout: float = 4.0,
+        timeout: float = 3.0,
     ) -> VerificationSynthesisPayload:
         if self.custom_payload is not None:
             return self.custom_payload

@@ -26,7 +26,7 @@ class BraveSearchProvider(SearchProvider):
         query: str,
         count: int = 5,
         mode: str = "snippets",
-        timeout: float = 3.0,
+        timeout: float = 2.0,
     ) -> list[dict]:
         headers = {
             "X-Subscription-Token": self.api_key,

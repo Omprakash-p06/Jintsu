@@ -10,9 +10,13 @@ class SearchProvider(ABC):
         query: str,
         count: int = 5,
         mode: str = "snippets",
-        timeout: float = 3.0,
+        timeout: float = 2.0,
     ) -> list[dict]:
-        """Search external index and return normalized source snippet dicts."""
+        """Search external index and return normalized source snippet dicts.
+
+        NOTE: Callers must pass min(stage_budget, remaining_time); default 2.0s
+        matches the Stage-1 subordinate ceiling, never the 8.0s overall request budget.
+        """
 
 
 class ModelProvider(ABC):
@@ -21,6 +25,10 @@ class ModelProvider(ABC):
         self,
         claim: str,
         snippets: list[dict],
-        timeout: float = 4.0,
+        timeout: float = 3.0,
     ) -> VerificationSynthesisPayload:
-        """Synthesize claim verification payload strictly grounded in snippets."""
+        """Synthesize claim verification payload strictly grounded in snippets.
+
+        NOTE: Callers must pass min(stage_budget, remaining_time); default 3.0s matches
+        the synthesis budget window.
+        """

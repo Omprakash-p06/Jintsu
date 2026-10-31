@@ -23,7 +23,7 @@ class MetaModelProvider(ModelProvider):
         self,
         claim: str,
         snippets: list[dict],
-        timeout: float = 4.0,
+        timeout: float = 3.0,
     ) -> VerificationSynthesisPayload:
         evidence_blocks = "\n".join(
             f'<evidence_snippet id="{s.get("source_id", "")}">\n{s.get("snippet", "")}\n</evidence_snippet>'
@@ -95,3 +95,4 @@ class MetaModelProvider(ModelProvider):
                 code="META_PARSE_ERROR",
                 detail=str(exc),
             ) from exc
+
