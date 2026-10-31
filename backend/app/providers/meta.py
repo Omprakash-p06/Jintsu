@@ -6,6 +6,39 @@ from app.core.errors import ProviderTimeoutError, ProviderUnavailableError
 from app.providers.base import ModelProvider
 
 
+def strict_json_schema() -> dict:
+    """Transform Pydantic JSON schema to strictly conformant OpenAI/Meta schema.
+
+    Strict mode requires:
+    1. additionalProperties: False on every object node
+    2. All properties listed in required on every object node
+    3. Root title removed
+    """
+    schema = VerificationSynthesisPayload.model_json_schema()
+
+    def harden(node: dict) -> dict:
+        if not isinstance(node, dict):
+            return node
+        if node.get("type") == "object":
+            props = node.get("properties", {})
+            node["additionalProperties"] = False
+            node["required"] = list(props.keys())
+            for val in props.values():
+                if isinstance(val, dict):
+                    harden(val)
+        items = node.get("items")
+        if isinstance(items, dict):
+            harden(items)
+        defs = node.get("$defs", {})
+        for val in defs.values():
+            if isinstance(val, dict):
+                harden(val)
+        return node
+
+    schema.pop("title", None)
+    return harden(schema)
+
+
 class MetaModelProvider(ModelProvider):
     def __init__(
         self,
@@ -52,7 +85,7 @@ class MetaModelProvider(ModelProvider):
                 "json_schema": {
                     "name": "verification_synthesis",
                     "strict": True,
-                    "schema": VerificationSynthesisPayload.model_json_schema(),
+                    "schema": strict_json_schema(),
                 },
             },
         }

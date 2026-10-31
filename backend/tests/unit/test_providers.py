@@ -13,7 +13,7 @@ from app.core.errors import (
 from app.providers import get_model_provider, get_search_provider
 from app.providers.base import ModelProvider, SearchProvider
 from app.providers.brave import BraveSearchProvider
-from app.providers.meta import MetaModelProvider
+from app.providers.meta import MetaModelProvider, strict_json_schema
 from app.providers.mock import MockModelProvider, MockSearchProvider
 
 
@@ -64,6 +64,17 @@ async def test_mock_model_provider():
     assert len(payload.reasoning_statements) == 1
     assert "src_1" in payload.reasoning_statements[0].citation_ids
     assert payload.reasoning_statements[0].quoted_excerpt is not None
+
+
+def test_strict_json_schema():
+    schema = strict_json_schema()
+    assert "title" not in schema
+    assert schema.get("additionalProperties") is False
+    assert set(schema.get("required", [])) == set(schema.get("properties", {}).keys())
+
+    for def_name, def_schema in schema.get("$defs", {}).items():
+        assert def_schema.get("additionalProperties") is False, f"$defs[{def_name}] missing additionalProperties: False"
+        assert set(def_schema.get("required", [])) == set(def_schema.get("properties", {}).keys()), f"$defs[{def_name}] incomplete required list"
 
 
 def test_provider_factory():
