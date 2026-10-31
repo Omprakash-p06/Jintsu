@@ -95,4 +95,3 @@ class MetaModelProvider(ModelProvider):
                 code="META_PARSE_ERROR",
                 detail=str(exc),
             ) from exc
-

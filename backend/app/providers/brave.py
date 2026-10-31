@@ -6,7 +6,11 @@ from datetime import UTC, datetime
 import httpx
 
 from app.core.config import settings
-from app.core.errors import ProviderTimeoutError, ProviderUnavailableError
+from app.core.errors import (
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+    RequestConstraintError,
+)
 from app.providers.base import SearchProvider
 
 WIRE_MAPPINGS: list[tuple[re.Pattern[str], str]] = [
@@ -40,8 +44,10 @@ class BraveSearchProvider(SearchProvider):
             url = "https://api.search.brave.com/res/v1/llm/context"
             params = {"q": query}
         else:
-            url = "https://api.search.brave.com/res/v1/web/search"
-            params = {"q": query, "count": str(count)}
+            raise RequestConstraintError(
+                f"Unsupported Brave retrieval mode: {mode!r}",
+                code="BRAVE_BAD_MODE",
+            )
 
         try:
             if self._client is not None:

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,7 +12,7 @@ class Settings(BaseSettings):
     META_MODEL: str = "muse-spark-1.3"
     DATABASE_PATH: str = "data/jintru.db"
     REQUEST_DEADLINE_SECONDS: float = 8.0
-    BRAVE_RETRIEVAL_MODE: str = "snippets"  # "snippets" or "context"
+    BRAVE_RETRIEVAL_MODE: Literal["snippets", "context"] = "snippets"
     USE_MOCK_PROVIDERS: bool = False
 
 

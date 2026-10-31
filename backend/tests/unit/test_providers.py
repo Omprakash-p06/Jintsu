@@ -5,7 +5,11 @@ import pytest
 
 from app.api.schemas import VerificationSynthesisPayload
 from app.core.config import Settings
-from app.core.errors import ProviderTimeoutError, ProviderUnavailableError
+from app.core.errors import (
+    ProviderTimeoutError,
+    ProviderUnavailableError,
+    RequestConstraintError,
+)
 from app.providers import get_model_provider, get_search_provider
 from app.providers.base import ModelProvider, SearchProvider
 from app.providers.brave import BraveSearchProvider
@@ -215,6 +219,14 @@ async def test_brave_search_error_handling():
         with pytest.raises(ProviderUnavailableError) as exc_info:
             await provider_503.search("query")
         assert exc_info.value.code == "BRAVE_UNAVAILABLE"
+
+
+@pytest.mark.asyncio
+async def test_brave_search_invalid_mode():
+    provider = BraveSearchProvider(api_key="mock_key")
+    with pytest.raises(RequestConstraintError) as exc_info:
+        await provider.search("query", mode="unsupported_mode")  # type: ignore
+    assert exc_info.value.code == "BRAVE_BAD_MODE"
 
 
 @pytest.mark.asyncio
