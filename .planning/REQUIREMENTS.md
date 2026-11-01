@@ -38,20 +38,20 @@
 ### API Gateway & Endpoints
 
 - [ ] **API-01**: FastAPI application in `backend/app/main.py` using modern `@asynccontextmanager lifespan` handler, CORS configuration, and domain error handlers mapping timeouts to HTTP 504.
-- [ ] **API-02**: Complete REST endpoints in `backend/app/api/routes.py`: `POST /verifications`, `GET /verifications`, `GET /verifications/{id}`, `DELETE /verifications/{id}`, `DELETE /verifications`, and `GET /health`.
+- [ ] **API-02**: Complete REST endpoints in `backend/app/api/routes.py`: `POST /api/v1/verifications`, `GET /api/v1/verifications`, `GET /api/v1/verifications/{id}`, `DELETE /api/v1/verifications/{id}`, `DELETE /api/v1/verifications`, and `GET /api/v1/health`.
 
 ### Workbench Frontend
 
-- [ ] **UI-01**: Vite + React 19 + TypeScript 5.6 + stable Tailwind CSS v4 (`^4.0.0`) frontend application scaffolding with typed fetch client.
-- [ ] **UI-02**: Workbench input textarea with 500-character counter, submit action, and loading state with live elapsed timer.
-- [ ] **UI-03**: Accessible 5-way verdict badge (`VerdictCard.tsx`) pairing distinct colors with semantic icons and text labels (`supported`: emerald, `contradicted`: rose, `mixed`: amber, `insufficient_evidence`: slate, `not_verifiable`: indigo), summary, and limitations accordion.
-- [ ] **UI-04**: Evidence cards (`EvidenceList.tsx`) displaying retrieved sources with stance badges, canonical domains, quoted snippets, and safe external links (`rel="noopener noreferrer"`).
-- [ ] **UI-05**: History sidebar drawer (`HistoryPanel.tsx`) with individual verification deletion and full purge controls.
+- [ ] **UI-01**: Next.js 16 + React 19 + TypeScript + stable Tailwind CSS v4 (`^4.3.3`) frontend application integration with typed API client (`frontend/lib/api.ts`).
+- [ ] **UI-02**: Workbench claim input textarea with 500-character counter, submit action, and loading state with live elapsed timer and progress stages.
+- [ ] **UI-03**: Accessible 5-way verdict badge pairing semantic icons with explicit color tokens (`supported`: emerald, `contradicted`: rose, `mixed`: amber, `insufficient_evidence`: slate, `not_verifiable`: indigo), summary narrative, and limitations accordion ("What remains unknown") wired to backend response.
+- [ ] **UI-04**: Evidence cards (`SourceCard`) displaying retrieved sources with stance badges, canonical domains, wire attribution, quoted snippets, and safe external links (`rel="noopener noreferrer"`).
+- [ ] **UI-05**: History sidebar drawer with real-time verification listing, individual deletion (`DELETE /api/v1/verifications/{id}`), and full purge controls (`DELETE /api/v1/verifications`).
 
 ### Quality, Verification & Benchmarks
 
 - [ ] **TEST-01**: Unit test suite verifying citation normalization, budget enforcement, mock provider compliance, and 0 database lockups under 10 concurrent tasks.
-- [ ] **TEST-02**: Playwright E2E tests validating CUJ 1 (claim submission to citation inspection) and CUJ 3 (abstention on absent evidence) across Chromium and Firefox.
+- [ ] **TEST-02**: Playwright E2E tests validating CUJ 1 (claim submission to citation inspection) and CUJ 3 (abstention on absent evidence) across Chromium and Firefox against the wired full-stack app.
 - [ ] **SEC-01**: Security audits passing `semgrep --config auto backend/`, `pip-audit backend/`, and `npm --prefix frontend audit`.
 - [ ] **EVAL-01**: Offline evaluation benchmark (`evals/run_evals.py` on `cases.jsonl`) verifying citation entailment precision ≥ 90%, false-support rate ≤ 5%, and counterevidence recall ≥ 80%.
 - [ ] **EVAL-02**: Live WAN retrieval latency distribution benchmarking (P50, P90, P95) asserting 100% fail-safe degradation to HTTP 504 when synthesis window drops below 2.5s.
@@ -83,23 +83,23 @@
 
 | Requirement | Phase | Status |
 |:---|:---|:---:|
-| **FOUND-01** | Phase 1: Foundations, Data Contracts & External Providers | Pending |
-| **FOUND-02** | Phase 1: Foundations, Data Contracts & External Providers | Pending |
-| **FOUND-03** | Phase 1: Foundations, Data Contracts & External Providers | Pending |
-| **DATA-01** | Phase 1: Foundations, Data Contracts & External Providers | Pending |
-| **PROV-01** | Phase 1: Foundations, Data Contracts & External Providers | Pending |
-| **PROV-02** | Phase 1: Foundations, Data Contracts & External Providers | Pending |
+| **FOUND-01** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
+| **FOUND-02** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
+| **FOUND-03** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
+| **DATA-01** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
+| **PROV-01** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
+| **PROV-02** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
 | **PIPE-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
 | **PIPE-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
 | **CITE-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
 | **POL-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
 | **API-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
 | **API-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
-| **UI-01** | Phase 3: React Workbench UI & Full-Stack Integration | Pending |
-| **UI-02** | Phase 3: React Workbench UI & Full-Stack Integration | Pending |
-| **UI-03** | Phase 3: React Workbench UI & Full-Stack Integration | Pending |
-| **UI-04** | Phase 3: React Workbench UI & Full-Stack Integration | Pending |
-| **UI-05** | Phase 3: React Workbench UI & Full-Stack Integration | Pending |
+| **UI-01** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
+| **UI-02** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
+| **UI-03** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
+| **UI-04** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
+| **UI-05** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
 | **TEST-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
 | **TEST-02** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
 | **SEC-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
@@ -113,5 +113,5 @@
 
 ---
 *Requirements defined: 2026-10-31*  
-*Last updated: 2026-10-31 after initialization*
+*Last updated: 2026-11-01 after frontend prototype import and phase replanning*
 

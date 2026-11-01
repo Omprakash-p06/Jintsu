@@ -22,8 +22,8 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 ## Phases
 
 - [x] **Phase 1: Foundations, Data Contracts & External Providers** - Core Python 3.12 dependencies, Pydantic schemas, SQLite WAL persistence, and Brave Search / Meta Model provider adapters.
-- [ ] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy, and FastAPI routes.
-- [ ] **Phase 3: React Workbench UI & Full-Stack Integration** - React 19 + TypeScript 5.6 + stable Tailwind CSS v4 workbench application, 5-way verdict badge, evidence cards, and history drawer.
+- [ ] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy with counterevidence guardrails, and FastAPI REST endpoints.
+- [ ] **Phase 3: Frontend Wiring & Full-Stack Integration** - Wire the existing Next.js 16 + React 19 + Tailwind CSS v4 workbench prototype to the FastAPI backend, connecting real claim submission, live timers, 5-way verdict badge, source evidence cards, relationship map, and history drawer.
 - [ ] **Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking** - Automated unit/integration tests, Playwright E2E tests, security audits, and quantitative offline/live evaluation benchmarks.
 
 ---
@@ -45,9 +45,9 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 **Success Criteria** (what must be TRUE):
   1. `backend/pyproject.toml` installs cleanly under Python 3.12; `ruff check backend/` and `pyright backend/app/` pass with zero errors.
   2. `backend/app/core/config.py` loads `Settings` with `META_MODEL="muse-spark-1.3"`, `REQUEST_DEADLINE_SECONDS=8.0`, and `USE_MOCK_PROVIDERS`.
-  3. `Database` in `backend/app/db/database.py` enforces connection-scoped `PRAGMA busy_timeout=5000;` and `PRAGMA synchronous=NORMAL;` via `_connect()`, and `get_verification()` parses JSON fields without Pydantic validation errors.
+  3. `Database` in `backend/app/db/database.py` enforces connection-scoped `PRAGMA busy_timeout=5000;`, `PRAGMA synchronous=NORMAL;`, and `PRAGMA journal_mode=WAL;` via `_connect()`, and `get_verification()` parses JSON fields without Pydantic validation errors.
   4. `BraveSearchProvider` extracts snippets and maps `grounding.generic[].snippets` (LLM Context) into `SourceItem` contracts with SHA-256 hashes and wire/domain clustering.
-  5. `MetaModelProvider` dispatches structured completion requests locked to `muse-spark-1.3` using `response_format` matching `VerificationSynthesisPayload`.
+  5. `MetaModelProvider` dispatches structured completion requests locked to `muse-spark-1.3` using `response_format` matching strict `VerificationSynthesisPayload` schema.
   6. Deterministic mock search and model providers in `mock.py` return valid data for offline testing.
 
 **Plans**: 2 plans
@@ -70,10 +70,10 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 **Requirements**: `PIPE-01`, `PIPE-02`, `CITE-01`, `POL-01`, `API-01`, `API-02`  
 **Success Criteria** (what must be TRUE):
   1. `classify_input` catches subjective value judgments and future predictions using conservative regex (protecting entities like "Best Buy" and historical statements), short-circuiting to `not_verifiable` (0 search, 0 LLM calls).
-  2. Orchestrator executes monotonic budget: Stage 1 search (2.3s allocation, 2.0s timeout), unconditional Stage 2 dialectical counter-search if time ≥ 3.5s, and cleanly returns HTTP 504 Gateway Timeout if synthesis window drops below 2.5s.
-  3. `validate_citations` validates Tier 1 ID existence and Tier 2 normalized exact substring matching (`quoted_excerpt` in `snippet`).
-  4. `apply_verdict_policy` strictly bars `supported` when credible counterevidence exists (`stance == "refutes"` with direct/contextual relevance), and enforces the 2-domain corroboration guardrail.
-  5. FastAPI app mounts all 6 routes (`/verifications`, `/health`, CRUD) using modern `@asynccontextmanager lifespan` handler and structured `ErrorEnvelope`.
+  2. Orchestrator executes monotonic budget: Stage 1 search (2.3s allocation, 2.0s timeout), unconditional Stage 2 dialectical counter-search if time ≥ 3.5s (`f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"`), and cleanly returns HTTP 504 Gateway Timeout if synthesis window drops below 2.5s.
+  3. `validate_citations` validates Tier 1 ID existence and Tier 2 normalized exact substring matching (`quoted_excerpt` in `snippet`) after HTML unescaping, whitespace collapsing, and smart quote normalization.
+  4. `apply_verdict_policy` strictly bars `supported` when credible counterevidence exists (`stance == "refutes"` with direct/contextual relevance), and enforces the 2-domain corroboration guardrail (≥ 2 distinct `source_family_id` clusters).
+  5. FastAPI app mounts all REST routes (`/api/v1/verifications`, `/api/v1/verifications/{id}`, `/api/v1/health`, CRUD) using modern `@asynccontextmanager lifespan` handler, CORS configuration, and structured `ErrorEnvelope`.
 
 **Plans**: 2 plans
 - [ ] 02-01: Verification pipeline orchestrator (Gate A screening, two-stage dialectical retrieval, 2.5s window guard, citation validation, verdict policy).
@@ -81,8 +81,8 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 
 ---
 
-### Phase 3: React Workbench UI & Full-Stack Integration
-**Goal**: Build the responsive, accessible web workbench using React 19, TypeScript, and stable Tailwind CSS v4, providing claim verification input, live timers, 5-way verdict badges, quoted source evidence cards, and history management.  
+### Phase 3: Frontend Wiring & Full-Stack Integration
+**Goal**: Wire the existing Next.js 16 + React 19 + Tailwind CSS v4 workbench prototype in `frontend/` to the FastAPI backend, connecting real claim submission, live timers, 5-way verdict badge, source evidence cards, relationship map, and history drawer.  
 **Ultimate State of Truth (SSOT)**:
 - [`misc/docs/designs/jintru_claim_verification.md`](file:///home/omprakash/Documents/jintru/misc/docs/designs/jintru_claim_verification.md) (Section 3.1; Phase 6)
 - [`misc/docs/designs/concepts_brief.md`](file:///home/omprakash/Documents/jintru/misc/docs/designs/concepts_brief.md)
@@ -93,16 +93,18 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 **UI hint**: yes  
 **Requirements**: `UI-01`, `UI-02`, `UI-03`, `UI-04`, `UI-05`  
 **Success Criteria** (what must be TRUE):
-  1. Frontend project builds and typechecks cleanly via `npm run build`, `npm run lint`, and `npm run typecheck` using stable Tailwind v4 (`^4.0.0`).
-  2. `Workbench.tsx` enforces 500-character input ceiling, submit triggers verification, and active state displays loading spinner with elapsed timer.
-  3. `VerdictCard.tsx` renders accessible 5-way badge pairing semantic icons with explicit color tokens (`supported`: emerald, `contradicted`: rose, `mixed`: amber, `insufficient_evidence`: slate, `not_verifiable`: indigo), summary narrative, and limitations accordion.
-  4. `EvidenceList.tsx` renders source items with stance badges, canonical domains, quoted snippets, and safe external links (`rel="noopener noreferrer"`).
-  5. `HistoryPanel.tsx` drawer allows browsing previous runs, deleting individual records (`DELETE /verifications/{id}`), and purging history (`DELETE /verifications`).
-  6. Frontend integrates with backend over `/api/v1` via Vite proxy with zero CORS or serialization errors.
+  1. Frontend project builds and typechecks cleanly via `npm run build` using Next.js 16, React 19, and Tailwind CSS v4.
+  2. Typed API client in `frontend/lib/api.ts` connects to FastAPI backend over `/api/v1` with Next.js rewrites/proxy or configured API URL, matching backend Pydantic schemas.
+  3. Claim panel textarea with 500-character counter submits assertions to `POST /api/v1/verifications`, displaying live elapsed timer and progress stages during processing.
+  4. Accessible 5-way verdict badge renders backend `public_verdict` with semantic icons and explicit color tokens (`supported`: emerald, `contradicted`: rose, `mixed`: amber, `insufficient_evidence`: slate, `not_verifiable`: indigo), summary narrative, and limitations accordion ("What remains unknown").
+  5. Evidence grid renders real `SourceItem`s with stance badges, canonical domains, wire attribution, quoted snippets, and safe external links (`rel="noopener noreferrer"`).
+  6. Relationship graph dynamically maps Claim -> supporting/refuting source family branches -> final verdict based on real verification data.
+  7. History sidebar drawer fetches `GET /api/v1/verifications`, loads past verifications (`GET /api/v1/verifications/{id}`), and handles deletion (`DELETE /api/v1/verifications/{id}`) and full purge (`DELETE /api/v1/verifications`).
+  8. System status and settings panel displays live backend connection and provider status from `GET /api/v1/health`.
 
 **Plans**: 2 plans
-- [ ] 03-01: Frontend project scaffolding, Vite proxy, Tailwind CSS v4 setup, typed API client, and root shell.
-- [ ] 03-02: Feature components (`Workbench`, `VerdictCard`, `EvidenceList`, `HistoryPanel`) and full-stack integration.
+- [ ] 03-01: Typed API client (`frontend/lib/api.ts`), Next.js rewrites/proxy setup, build verification, and contract integration.
+- [ ] 03-02: Component wiring in `frontend/app/page.tsx` (claim verification, progress timer, verdict card, dynamic relationship graph, evidence cards, history drawer, and error envelope handling).
 
 ---
 
@@ -120,7 +122,7 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 **Requirements**: `TEST-01`, `TEST-02`, `SEC-01`, `EVAL-01`, `EVAL-02`  
 **Success Criteria** (what must be TRUE):
   1. `pytest backend/tests/` passes with unit and integration tests verifying citation checks, budget enforcement, provider mocks, and 0 database lockups under 10 concurrent tasks.
-  2. Playwright E2E tests (`npm --prefix frontend run test:e2e -- --project=chromium --project=firefox`) validate CUJ 1 and CUJ 3 end-to-end.
+  2. Playwright E2E tests (`npm --prefix frontend run test:e2e -- --project=chromium --project=firefox`) validate CUJ 1 (claim submission to citation inspection) and CUJ 3 (abstention on absent evidence) end-to-end against the wired application.
   3. Security audits pass cleanly: `semgrep --config auto backend/`, `pip-audit backend/`, and `npm --prefix frontend audit`.
   4. Offline benchmark harness (`evals/run_evals.py --cases evals/cases.jsonl`) verifies quantitative metrics: citation entailment precision ≥ 90%, false-support rate under absent evidence ≤ 5%, counterevidence recall ≥ 80%.
   5. Live WAN retrieval benchmark tracks latency distribution (P50, P90, P95) and confirms that 100% of injected latency spikes reducing synthesis time below 2.5s degrade cleanly to HTTP 504 Gateway Timeout.
@@ -138,8 +140,8 @@ Phases execute in numeric order: Phase 1 → Phase 2 → Phase 3 → Phase 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|:--------------:|:------:|:---------:|
-| 1. Foundations, Data Contracts & External Providers | 0/2 | Not started | - |
-| 2. Verification Engine, Citation Validation & API Gateway | 0/2 | Not started | - |
-| 3. React Workbench UI & Full-Stack Integration | 0/2 | Not started | - |
+| 1. Foundations, Data Contracts & External Providers | 2/2 | Complete | 2026-10-31 |
+| 2. Verification Engine, Citation Validation & API Gateway | 0/2 | Ready to plan | - |
+| 3. Frontend Wiring & Full-Stack Integration | 0/2 | Not started | - |
 | 4. Verification Suite, Offline Evals & Live SLA Benchmarking | 0/2 | Not started | - |
 

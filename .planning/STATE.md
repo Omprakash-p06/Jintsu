@@ -25,8 +25,8 @@ See: `.planning/PROJECT.md` (updated 2026-10-31)
 
 Phase: 2 of 4 (Verification Engine, Citation Validation & API Gateway)  
 Plan: Ready to plan Phase 2  
-Status: Phase 1 complete (01-01 and 01-02 verified and committed)  
-Last activity: 2026-10-31 — Completed Phase 1 execution: delivered backend scaffolding, Pydantic schemas, concurrency-safe SQLite WAL persistence, Brave Search & Meta Model adapters, deterministic mocks, provider factories, and 20 passing unit tests.
+Status: Phase 1 complete & audited; unwired Next.js frontend prototype imported; ready for Phase 2 backend planning  
+Last activity: 2026-11-01 — Replanned project phases based on imported Next.js frontend prototype: Phase 2 delivers the complete verification engine and FastAPI gateway; Phase 3 wires the frontend prototype to the backend API; Phase 4 runs E2E tests, security audits, and evaluation benchmarks.
 
 Progress: [██▌░░░░░░░] 25%
 
@@ -45,7 +45,7 @@ Progress: [██▌░░░░░░░] 25%
 |-------|:-----:|:-----:|:--------:|
 | 1. Foundations & Providers | 2/2 | 0.5h | 15m |
 | 2. Verification Engine & API | 0/2 | - | - |
-| 3. React Workbench UI | 0/2 | - | - |
+| 3. Frontend Wiring & Integration | 0/2 | - | - |
 | 4. Verification & Evals | 0/2 | - | - |
 
 **Recent Trend:**
