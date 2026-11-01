@@ -22,7 +22,7 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 ## Phases
 
 - [x] **Phase 1: Foundations, Data Contracts & External Providers** - Core Python 3.12 dependencies, Pydantic schemas, SQLite WAL persistence, and Brave Search / Meta Model provider adapters.
-- [ ] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy with counterevidence guardrails, and FastAPI REST endpoints.
+- [x] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy with counterevidence guardrails, and FastAPI REST endpoints.
 - [ ] **Phase 3: Frontend Wiring & Full-Stack Integration** - Wire the existing Next.js 16 + React 19 + Tailwind CSS v4 workbench prototype to the FastAPI backend, connecting real claim submission, live timers, 5-way verdict badge, source evidence cards, relationship map, and history drawer.
 - [ ] **Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking** - Automated unit/integration tests, Playwright E2E tests, security audits, and quantitative offline/live evaluation benchmarks.
 
@@ -76,8 +76,8 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
   5. FastAPI app mounts all REST routes (`/api/v1/verifications`, `/api/v1/verifications/{id}`, `/api/v1/health`, CRUD) using modern `@asynccontextmanager lifespan` handler, CORS configuration, and structured `ErrorEnvelope`.
 
 **Plans**: 2 plans
-- [ ] 02-01: Verification pipeline orchestrator (Gate A screening, two-stage dialectical retrieval, 2.5s window guard, citation validation, verdict policy).
-- [ ] 02-02: FastAPI gateway routes (`/api/v1`), modern lifespan handler, CORS configuration, and domain exception handlers.
+- [x] 02-01: Verification pipeline orchestrator (Gate A screening, two-stage dialectical retrieval, 2.5s window guard, citation validation, verdict policy).
+- [x] 02-02: FastAPI gateway routes (`/api/v1`), modern lifespan handler, CORS configuration, and domain exception handlers.
 
 ---
 

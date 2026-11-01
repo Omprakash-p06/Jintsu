@@ -30,15 +30,15 @@
 
 ### Verification Pipeline & Engine
 
-- [ ] **PIPE-01**: Conservative Gate A pre-retrieval classification in `backend/app/services/verification.py` using context-aware regex to catch subjective value judgments and future predictions (without false-positive rejection of entities like "Best Buy" or historical statements) to `not_verifiable` (0 search, 0 LLM calls).
-- [ ] **PIPE-02**: Monotonic clock-bounded pipeline orchestrator enforcing 8.0s request ceiling: Stage 1 search (2.3s), unconditional Stage 2 dialectical counter-search if time ≥ 3.5s (`f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"`), and clean fail-safe abort to HTTP 504 Gateway Timeout if synthesis window < 2.5s.
-- [ ] **CITE-01**: Three-tier citation validation enforcing Tier 1 ID presence and Tier 2 normalized exact substring matching (`quoted_excerpt` in `snippet`) after HTML unescaping and whitespace/quote normalization.
-- [ ] **POL-01**: Deterministic application-level verdict policy: strictly barring `supported` if credible, relevant counterevidence exists (`stance == "refutes"` with direct/contextual relevance), and enforcing the Two-Domain Corroboration Guardrail (≥ 2 distinct `source_family_id` clusters).
+- [x] **PIPE-01**: Conservative Gate A pre-retrieval classification in `backend/app/services/verification.py` using context-aware regex to catch subjective value judgments and future predictions (without false-positive rejection of entities like "Best Buy" or historical statements) to `not_verifiable` (0 search, 0 LLM calls).
+- [x] **PIPE-02**: Monotonic clock-bounded pipeline orchestrator enforcing 8.0s request ceiling: Stage 1 search (2.3s), unconditional Stage 2 dialectical counter-search if time ≥ 3.5s (`f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"`), and clean fail-safe abort to HTTP 504 Gateway Timeout if synthesis window < 2.5s.
+- [x] **CITE-01**: Three-tier citation validation enforcing Tier 1 ID presence and Tier 2 normalized exact substring matching (`quoted_excerpt` in `snippet`) after HTML unescaping and whitespace/quote normalization.
+- [x] **POL-01**: Deterministic application-level verdict policy: strictly barring `supported` if credible, relevant counterevidence exists (`stance == "refutes"` with direct/contextual relevance), and enforcing the Two-Domain Corroboration Guardrail (≥ 2 distinct `source_family_id` clusters).
 
 ### API Gateway & Endpoints
 
-- [ ] **API-01**: FastAPI application in `backend/app/main.py` using modern `@asynccontextmanager lifespan` handler, CORS configuration, and domain error handlers mapping timeouts to HTTP 504.
-- [ ] **API-02**: Complete REST endpoints in `backend/app/api/routes.py`: `POST /api/v1/verifications`, `GET /api/v1/verifications`, `GET /api/v1/verifications/{id}`, `DELETE /api/v1/verifications/{id}`, `DELETE /api/v1/verifications`, and `GET /api/v1/health`.
+- [x] **API-01**: FastAPI application in `backend/app/main.py` using modern `@asynccontextmanager lifespan` handler, CORS configuration, and domain error handlers mapping timeouts to HTTP 504.
+- [x] **API-02**: Complete REST endpoints in `backend/app/api/routes.py`: `POST /api/v1/verifications`, `GET /api/v1/verifications`, `GET /api/v1/verifications/{id}`, `DELETE /api/v1/verifications/{id}`, `DELETE /api/v1/verifications`, and `GET /api/v1/health`.
 
 ### Workbench Frontend
 
@@ -89,12 +89,12 @@
 | **DATA-01** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
 | **PROV-01** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
 | **PROV-02** | Phase 1: Foundations, Data Contracts & External Providers | Satisfied |
-| **PIPE-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
-| **PIPE-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
-| **CITE-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
-| **POL-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
-| **API-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
-| **API-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Pending |
+| **PIPE-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
+| **PIPE-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
+| **CITE-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
+| **POL-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
+| **API-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
+| **API-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
 | **UI-01** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
 | **UI-02** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
 | **UI-03** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
@@ -113,5 +113,5 @@
 
 ---
 *Requirements defined: 2026-10-31*  
-*Last updated: 2026-11-01 after frontend prototype import and phase replanning*
+*Last updated: 2026-11-01 after Phase 2 execution (PIPE-01, PIPE-02, CITE-01, POL-01, API-01, API-02 satisfied)*
 
