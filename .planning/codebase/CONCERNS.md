@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: 168e6fe06a5dbb0cb5faa57eaa2b32b26587f020
+last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
 last_mapped_at: 2026-11-02
 ---
 # Codebase Concerns
