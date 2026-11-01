@@ -42,11 +42,11 @@
 
 ### Workbench Frontend
 
-- [ ] **UI-01**: Next.js 16 + React 19 + TypeScript + stable Tailwind CSS v4 (`^4.3.3`) frontend application integration with typed API client (`frontend/lib/api.ts`).
-- [ ] **UI-02**: Workbench claim input textarea with 500-character counter, submit action, and loading state with live elapsed timer and progress stages.
-- [ ] **UI-03**: Accessible 5-way verdict badge pairing semantic icons with explicit color tokens (`supported`: emerald, `contradicted`: rose, `mixed`: amber, `insufficient_evidence`: slate, `not_verifiable`: indigo), summary narrative, and limitations accordion ("What remains unknown") wired to backend response.
-- [ ] **UI-04**: Evidence cards (`SourceCard`) displaying retrieved sources with stance badges, canonical domains, wire attribution, quoted snippets, and safe external links (`rel="noopener noreferrer"`).
-- [ ] **UI-05**: History sidebar drawer with real-time verification listing, individual deletion (`DELETE /api/v1/verifications/{id}`), and full purge controls (`DELETE /api/v1/verifications`).
+- [x] **UI-01**: Next.js 16 + React 19 + TypeScript + stable Tailwind CSS v4 (`^4.3.3`) frontend application integration with typed API client (`frontend/lib/api.ts`).
+- [x] **UI-02**: Workbench claim input textarea with 500-character counter, submit action, and loading state with live elapsed timer and progress stages.
+- [x] **UI-03**: Accessible 5-way verdict badge pairing semantic icons with explicit color tokens (`supported`: emerald, `contradicted`: rose, `mixed`: amber, `insufficient_evidence`: slate, `not_verifiable`: indigo), summary narrative, and limitations accordion ("What remains unknown") wired to backend response.
+- [x] **UI-04**: Evidence cards (`SourceCard`) displaying retrieved sources with stance badges, canonical domains, wire attribution, quoted snippets, and safe external links (`rel="noopener noreferrer"`).
+- [x] **UI-05**: History sidebar drawer with real-time verification listing, individual deletion (`DELETE /api/v1/verifications/{id}`), and full purge controls (`DELETE /api/v1/verifications`).
 
 ### Quality, Verification & Benchmarks
 
@@ -95,11 +95,11 @@
 | **POL-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
 | **API-01** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
 | **API-02** | Phase 2: Verification Engine, Citation Validation & API Gateway | Satisfied |
-| **UI-01** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
-| **UI-02** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
-| **UI-03** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
-| **UI-04** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
-| **UI-05** | Phase 3: Frontend Wiring & Full-Stack Integration | Pending |
+| **UI-01** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
+| **UI-02** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
+| **UI-03** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
+| **UI-04** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
+| **UI-05** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
 | **TEST-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
 | **TEST-02** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
 | **SEC-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
@@ -113,5 +113,5 @@
 
 ---
 *Requirements defined: 2026-10-31*  
-*Last updated: 2026-11-01 after Phase 2 execution (PIPE-01, PIPE-02, CITE-01, POL-01, API-01, API-02 satisfied)*
+*Last updated: 2026-11-01 after Phase 3 execution (UI-01..UI-05 satisfied at source/type level; `next build` and browser verification blocked on Node >= 20.9.0)*
 

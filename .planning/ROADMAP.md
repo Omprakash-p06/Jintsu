@@ -23,7 +23,7 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 
 - [x] **Phase 1: Foundations, Data Contracts & External Providers** - Core Python 3.12 dependencies, Pydantic schemas, SQLite WAL persistence, and Brave Search / Meta Model provider adapters.
 - [x] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy with counterevidence guardrails, and FastAPI REST endpoints.
-- [ ] **Phase 3: Frontend Wiring & Full-Stack Integration** - Wire the existing Next.js 16 + React 19 + Tailwind CSS v4 workbench prototype to the FastAPI backend, connecting real claim submission, live timers, 5-way verdict badge, source evidence cards, relationship map, and history drawer.
+- [x] **Phase 3: Frontend Wiring & Full-Stack Integration** - Wire the existing Next.js 16 + React 19 + Tailwind CSS v4 workbench prototype to the FastAPI backend, connecting real claim submission, live timers, 5-way verdict badge, source evidence cards, relationship map, and history drawer.
 - [ ] **Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking** - Automated unit/integration tests, Playwright E2E tests, security audits, and quantitative offline/live evaluation benchmarks.
 
 ---
@@ -103,8 +103,8 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
   8. System status and settings panel displays live backend connection and provider status from `GET /api/v1/health`.
 
 **Plans**: 2 plans
-- [ ] 03-01: Typed API client (`frontend/lib/api.ts`), Next.js rewrites/proxy setup, build verification, and contract integration.
-- [ ] 03-02: Component wiring in `frontend/app/page.tsx` (claim verification, progress timer, verdict card, dynamic relationship graph, evidence cards, history drawer, and error envelope handling).
+- [x] 03-01: Typed API client (`frontend/lib/api.ts`), Next.js rewrites/proxy setup, build verification, and contract integration. (**build gate blocked**: next@16.4.3 requires Node >= 20.9.0, host runs 18.19.1)
+- [x] 03-02: Component wiring in `frontend/app/page.tsx` (claim verification, progress timer, verdict card, dynamic relationship graph, evidence cards, history drawer, and error envelope handling). (**runtime verification deferred** to Phase 4 E2E on a Node >= 20.9.0 host)
 
 ---
 

@@ -1,19 +1,19 @@
 ---
 gsd_state_version: "1.0"
-current_phase: 2
-current_phase_name: Verification Engine, Citation Validation & API Gateway
+current_phase: 3
+current_phase_name: Frontend Wiring & Full-Stack Integration
 status: complete
-stopped_at: Phase 2 complete. Ready to plan Phase 3 (`/gsd-plan-phase 3`).
-last_updated: "2026-11-01T16:30:00.000Z"
+stopped_at: Phase 3 complete (build/runtime gates blocked on Node >= 20.9.0). Ready to plan Phase 4 (`/gsd-plan-phase 4`).
+last_updated: "2026-11-01T18:35:00.000Z"
 last_activity: 2026-11-01
-last_activity_desc: Phase 2 execution complete (verification engine + FastAPI gateway)
-state_head: d4537e084fe9f26d787ccabf6e6a792004d42e8f
+last_activity_desc: Phase 3 execution complete (typed API boundary + wired workbench)
+state_head: cfab0da4fc11b43195c1f45cc10544879fb92ef6
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 50
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -23,27 +23,27 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-10-31)
 
 **Core value:** Show what supports a claim, what challenges it, how reliable that evidence is, and exactly what remains unknown.  
-**Current focus:** Phase 2 — Verification Engine, Citation Validation & API Gateway
+**Current focus:** Phase 3 — Frontend Wiring & Full-Stack Integration
 
 ---
 
 ## Current Position
 
-Phase: 2 (Verification Engine, Citation Validation & API Gateway) — COMPLETE
+Phase: 3 (Frontend Wiring & Full-Stack Integration) — COMPLETE (type-level)
 Plan: 2 of 2
-Status: Phase 2 complete — 77/77 backend tests green, ruff and pyright clean
-Last activity: 2026-11-01 — Phase 2 complete (verification engine + FastAPI gateway)
+Status: Phase 3 complete — `tsc --noEmit` clean; `next build`/`next dev` BLOCKED (next 16 needs Node >= 20.9.0, host has 18.19.1)
+Last activity: 2026-11-01 — Phase 3 complete (typed API boundary + wired workbench)
 
-Progress: [█████░░░░░] 50%
+Progress: [███████▌░░] 75%
 
 ---
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 6
 - Average duration: 15 min
-- Total execution time: 1.0 hours
+- Total execution time: 1.5 hours
 
 **By Phase:**
 
@@ -51,7 +51,7 @@ Progress: [█████░░░░░] 50%
 |-------|:-----:|:-----:|:--------:|
 | 1. Foundations & Providers | 2/2 | 0.5h | 15m |
 | 2. Verification Engine & API | 2/2 | 0.5h | 15m |
-| 3. Frontend Wiring & Integration | 0/2 | - | - |
+| 3. Frontend Wiring & Integration | 2/2 | 0.5h | 15m |
 | 4. Verification & Evals | 0/2 | - | - |
 
 **Recent Trend:**
@@ -80,12 +80,13 @@ None yet.
 
 ### Blockers/Concerns
 
-None yet. All architectural and contract questions are resolved in `misc/docs/designs/jintru_claim_verification.md`.
+- **Node runtime floor (open):** `next@16.4.3` requires Node >= 20.9.0; this host runs v18.19.1. `next build` and `next dev` fail with an engine error, so frontend build and browser verification are unverified until Node is upgraded. Typechecking (`tsc --noEmit`) and package installation work.
+- All architectural and contract questions are otherwise resolved in `misc/docs/designs/jintru_claim_verification.md`.
 
 ---
 
 ## Session Continuity
 
 Last session: 2026-11-01  
-Stopped at: Phase 2 complete. Ready to plan Phase 3 (`/gsd-plan-phase 3`).  
+Stopped at: Phase 3 complete. Ready to plan Phase 4 (`/gsd-plan-phase 4`).  
 Resume file: None
