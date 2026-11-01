@@ -1,126 +1,99 @@
-# Conventions Summary: Reality Check AI (jintru)
+---
+last_mapped_commit: b77aa778b9b4a8b8ba1996061b3ee591626cb1d1
+last_mapped_at: 2026-11-02
+---
+# Coding Conventions
 
-## Code Style Conventions
+**Analysis Date:** 2026-11-02
 
-### Python (backend/app/)
-- **Formatter:** `ruff check backend/` — 0 errors target
-- **Type checker:** `pyright -p backend` — 0 errors target
-- **Line length:** 88 characters (ruff default)
-- **Docstrings:** Google-style or NumPy style
-- **Type annotations:** Required for all public functions
-- **Async/await:** Use `async def` for I/O-bound operations; `await` for coroutines
-- **Error handling:** Specific exception types; avoid bare `except:`
-- **Imports:** Standard library first, then third-party, then local modules
-- **F-strings:** Preferred for string formatting
+## Naming Patterns
 
-### TypeScript/React (frontend/)
-- **Type checker:** `npx tsc --noEmit` — 0 errors target
-- **Linting:** `ruff check backend/ evals/` and `eslint` configurations
-- **Component structure:** Functional components with hooks
-- **Tailwind CSS v4:** `^4.0.0` — utility-first styling
-- **Accessibility:** WCAG 2.2 AA compliance, visible focus rings (`#7C3AED`)
-- **File naming:** PascalCase for components, camelCase for utilities
+**Files:**
+- Backend: Lowercase snake_case for all modules and test files (`verification.py`, `test_concurrency.py`, `schemas.py`)
+- Frontend: Lowercase camelCase for utilities (`api.ts`, `utils.ts`), PascalCase or lowercase for components (`page.tsx`, `button.tsx`)
 
-### Shell Scripts
-- **Syntax:** `set -euo pipefail` at top of all scripts
-- **Error handling:** Explicit error messages on failure
-- **Shebang:** `#!/usr/bin/env bash`
-- ** quoting:** Always quote variable expansions
+**Functions:**
+- Backend: Lowercase snake_case (`classify_input`, `group_sources`, `normalize_excerpt`). Private helpers prefixed with single underscore (`_registrable_domain`, `_enforce_synthesis_guard`, `_with_write_retry`).
+- Frontend: Lowercase camelCase (`createVerification`, `safeHref`, `normalizeVerification`, `toApiError`).
 
-### Markdown & Documentation
-- **Front matter:** YAML format between `---` delimiters
-- **Headers:** `# ` for title, `## ` for sections, `### ` for subsections
-- **Tables:** Markdown format with pipe separators
-- **Link format:** `[text](url)` with `rel="noopener noreferrer"` for external links
+**Variables & Constants:**
+- Local variables: Lowercase snake_case in Python (`remaining_time`, `source_map`); camelCase in TypeScript (`controller`, `timer`, `response`).
+- Global Constants: UPPER_SNAKE_CASE in Python (`STAGE1_TIMEOUT_SECONDS = 2.0`, `SYNTHESIS_TIMEOUT_SECONDS = 3.0`, `MIN_SYNTHESIS_WINDOW_SECONDS = 2.5`); UPPER_SNAKE_CASE in TypeScript (`API_BASE`, `CLIENT_TIMEOUT_MS`).
 
-## Naming Conventions
+**Types & Classes:**
+- Backend: UpperCamelCase for Pydantic models, ABCs, and exception types (`VerificationRequest`, `SearchProvider`, `ProviderTimeoutError`, `VerificationResponse`). Type aliases use PascalCase or lowercase Literal unions (`PublicVerdict = Literal[...]`, `SourceStance = Literal[...]`).
+- Frontend: UpperCamelCase for interfaces and type aliases (`PublicVerdict`, `SourceItem`, `VerificationResponse`, `ApiError`).
 
-### Python Modules
-- `snake_case` for functions, variables, files
-- `UPPER_SNAKE_CASE` for constants
-- `CamelCase` for class names
+## Code Style
 
-### TypeScript/React
-- `camelCase` for variables, functions, components
-- `PascalCase` for component names exported as default
-- `SCREAMING_SNAKE_CASE` for constants
+**Formatting:**
+- Backend: Managed via Ruff (`ruff>=0.6.0`). Target Python 3.12 (`target-version = "py312"`), line length 100 characters (`line-length = 100` in `backend/pyproject.toml`).
+- Frontend: Prettier-compatible formatting with 2-space indentation, single quotes, no trailing semicolons.
 
-### Shell Scripts
-- `lowercase_with_underscores` for variables and functions
-- UPPER_SNAKE_CASE for environment variables
+**Linting:**
+- Backend: Ruff (`ruff check backend/`) with zero warnings tolerated. Pyright strict static type checker (`pyright -p backend`) with zero type errors.
+- Frontend: TypeScript strict mode (`"strict": true` in `frontend/tsconfig.json`), ESLint (`next lint`).
 
-### File Paths
-- All paths relative to project root
-- No spaces in filenames
-- Use hyphens (`-`) not underscores (`_`) in multi-word filenames when appropriate
+## Import Organization
 
-## Import Conventions
+**Order (Backend - PEP 8 / Ruff enforced):**
+1. Standard library imports (`asyncio`, `hashlib`, `html`, `re`, `time`, `uuid`, `urllib.parse`)
+2. Third-party library imports (`aiosqlite`, `fastapi`, `httpx`, `pydantic`, `pydantic_settings`)
+3. Local application imports (`app.api.schemas`, `app.core.config`, `app.core.errors`, `app.db.database`)
 
-### Python
-```python
-# Standard library
-import asyncio
-import json
-import hashlib
+**Path Aliases:**
+- Backend: Absolute package imports from root package (`from app.api.schemas import ...`). Tests set `pythonpath = ["."]`.
+- Frontend: `@/*` alias mapped to `./*` (`@/lib/api`, `@/components/ui/button` via `tsconfig.json`).
 
-# Third-party
-import fastapi
-import uvicorn
-import pytest
+## Error Handling
 
-# Local
-from app.core.errors import ProviderTimeoutError
-from app.db.database import Database
-from app.providers.mock import MockModelProvider
-```
+**Patterns:**
+- Typed domain exceptions defined in `backend/app/core/errors.py` inheriting from `DomainError`:
+  - `ProviderTimeoutError(message, code, detail)`
+  - `ProviderUnavailableError(message, code, detail)`
+  - `ClientDisconnectedError(message, code, detail)`
+  - `RequestConstraintError(message, code, detail)`
+- Centralized exception handlers registered in `backend/app/main.py` translating domain exceptions into standardized `ErrorEnvelope` JSON payloads.
+- Asynchronous database write operations wrapped with `_with_write_retry` to handle transient `sqlite3.OperationalError: database is locked` contention with exponential backoff (`backend/app/db/database.py`).
+- Client-side error handling: `ApiError` class in `frontend/lib/api.ts` parses `code`, `status`, `message`, and `detail` consistently.
 
-### TypeScript/React
-```typescript
-// External
-import { useState } from 'react'
-import { Browser } from 'playwright'
+## Logging
 
-// Internal
-import { SourceEvaluationItem } from '@/types'
-import { verificationApi } from '@/api/client'
-```
+**Framework:** Python standard library `logging` (`logger = logging.getLogger(__name__)`).
 
-## Configuration Conventions
+**Patterns:**
+- Log state transitions, provider fallback events, and latency breakdowns.
+- Never log raw API tokens, authorization headers, or sensitive user inputs.
+- Log timeouts and degradation triggers with explicit timing details (`logger.warning("Synthesis window exceeded: %.2fs remaining", remaining)`).
 
-### Environment Variables
-- `.env` files never committed (listed in `.gitignore`)
-- All secrets via environment variables at runtime
-- Default values documented in `pyproject.toml` (`requires-python = ">=3.12"`)
+## Comments
 
-### Config Files
-- `pyproject.toml` — Python project configuration
-- `package.json` — Node.js dependencies and scripts
-- `playwright.config.ts` — Playwright test configuration
-- `tailwind.config.js` — Tailwind CSS configuration (if applicable)
+**When to Comment:**
+- Explain architectural constraints, budget limits, or normative standards (e.g. references to ADRs or system invariants like `# Authoritative 8.0s budget stage allocations`).
+- Document complex regular expressions and wire service attribution patterns.
+- Avoid obvious comments that simply restate function or variable names.
 
-## Testing Conventions
+**JSDoc/TSDoc & Python Docstrings:**
+- Python: Module-level and class-level docstrings describing purpose and ADR compliance.
+- TypeScript: TSDoc comments for public exported client functions (`createVerification`, `safeHref`).
 
-### Python Tests
-- **Framework:** `pytest` with `pytest-asyncio`
-- **Fixture pattern:** `tmp_path` for temporary files, `mock` for dependencies
-- **Test organization:** One test file per module, named `test_*.py`
-- **Assertions:** Clear, specific error messages
-- **Markers:** `@pytest.mark.asyncio` for async tests
+## Function Design
 
-### Frontend Tests
-- **Framework:** Playwright with Chromium + Firefox projects
-- **CI integration:** GitHub Actions matrix workflow
-- **Selectors:** By role, text, or test IDs (not fragile CSS selectors)
-- **Accessibility tests:** Keyboard navigation, Escape dismissal, focus rings
+**Size:** Focused, single-responsibility functions. Complex algorithms (like `apply_verdict_policy` or `group_sources`) are decomposed into testable sub-functions.
 
-### Evaluation Tests
-- **Dataset:** `evals/cases.jsonl` (27 curated benchmark cases)
-- **Categories:** Empirical Supported, Contradicted, Disputed/Mixed, Insufficient Evidence, Subjective Value Judgments, Future Predictions, Adversarial Prompt Injections
-- **Thresholds:** Citation entailment precision ≥ 90.0%, False-support rate ≤ 5.0%, Counterevidence recall ≥ 80.0%
+**Parameters:** Use keyword arguments and explicit type annotations for all parameters. Avoid mutable default arguments.
 
-## Security Conventions
-- **Never commit API keys** or secrets
-- **Semgrep scanning:** `semgrep scan --config auto backend/app/` (0 findings target)
-- **Dependency audits:** `pip-audit` (0 vulnerabilities target), `npm audit --audit-level=high` (0 high/critical)
-- **URL scheme validation:** Validate URL schemes and sanitize evidence href sinks
-- **Prompt injection defense:** Screen snippets for high-risk phrases
+**Return Values:** Explicitly type-annotated return signatures. Async functions return `Awaitable` coroutines.
+
+## Module Design
+
+**Exports:**
+- Explicit exports defined in `__all__` or cleanly re-exported in package `__init__.py` files (e.g. `backend/app/providers/__init__.py`).
+- Avoid wild card (`from module import *`) imports.
+
+**Barrel Files:**
+- Avoid barrel files that cause circular dependencies. Explicit module import paths preferred.
+
+---
+
+*Convention analysis: 2026-11-02*

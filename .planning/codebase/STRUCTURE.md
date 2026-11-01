@@ -1,186 +1,194 @@
-# Structure Summary: Reality Check AI (jintru)
+---
+last_mapped_commit: b77aa778b9b4a8b8ba1996061b3ee591626cb1d1
+last_mapped_at: 2026-11-02
+---
+# Codebase Structure
 
-## Project Directory Layout
+**Analysis Date:** 2026-11-02
+
+## Directory Layout
 
 ```
-/home/omprakash/Documents/jintru/          # Project root
-├── .github/                               # CI/CD workflows
-│   └── workflows/
-│       └── ci.yml                         # GitHub Actions matrix
-├── .mcp.json                              # MCP configuration
-├── .planning/                             # Planning and documentation
-│   ├── ROADMAP.md                         # 4-phase roadmap governance
-│   ├── STATE.md                           # Project state tracking
-│   ├── REQUIREMENTS.md                    # Project requirements
-│   ├── PROJECT.md                         # Project metadata
-│   ├── STATE.json                         # Machine-readable state
-│   ├── milestone.lock                     # Milestone locking
-│   └── codebase/                          # Codebase mapping (this dir)
-│       ├── STACK.md                       # Technology stack summary
-│       ├── ARCHITECTURE.md                # System architecture
-│       ├── CONVENTIONS.md                 # Code style conventions
-│       ├── TESTING.md                     # Test suite overview
-│       ├── STRUCTURE.md                   # Project structure
-│       ├── CONCERNS.md                    # Known concerns and risks
-│       └── INTEGRATIONS.md                # External service integrations
-├── AGENTS.md                              # Agent role definition
-├── implementation_readiness_report.md     # Delivery readiness
-├── misc/                                  # Design specifications & ADRs
-│   ├── docs/
-│   │   ├── designs/
-│   │   │   ├── jintru_claim_verification.md
-│   │   │   └── concepts_brief.md
-│   │   └── specification.md
-│   ├── consolidated_review_report.md
-│   └── goldfish_review_report.md
-├── evals/                                 # Evaluation suite
-│   ├── cases.jsonl                        # 27 benchmark cases
-│   ├── results.json                       # Evaluation results
-│   └── run_evals.py                       # Evaluation runner
-├── backend/                               # Backend application
-│   ├── app/                               # Source code
-│   │   ├── api/                           # API endpoints
-│   │   ├── core/                          # Core logic (errors, config)
-│   │   ├── db/                            # Database module
-│   │   ├── providers/                     # Model/search providers
-│   │   ├── services/                      # Business services
-│   │   └── schemas.py                     # Pydantic schemas
-│   ├── tests/                             # Test directory
-│   │   ├── unit/                          # Unit tests
-│   │   │   ├── test_budget.py
-│   │   │   └── test_evals_offline.py
-│   │   └── integration/                   # Integration tests
-│   │       └── test_concurrency.py
-│   ├── pyproject.toml                     # Python project config
-│   ├── .venv/                             # Virtual environment
-│   └── scripts/                           # Utility scripts
-├── frontend/                              # Frontend application
-│   ├── package.json                       # Node.js dependencies
-│   ├── package-lock.json                  # Lock file
-│   ├── playwright.config.ts               # Playwright config
-│   ├── tsconfig.json                      # TypeScript config
-│   ├── src/                               # Source files
-│   │   └── components/                    # React components
-│   ├── tests/                             # E2E test directory
-│   │   └── workbench.spec.ts
-│   └── src/                               # Main source files
-├── scripts/                               # Utility scripts
-│   └── run_security_audit.sh              # Security audit script
-├── misc/                                  # Goldfish review reports
-│   └── goldfish_review_report.md
-└── .git/                                  # Git repository
+/home/omprakash/Documents/jintru/
+├── backend/                             # Python FastAPI backend application
+│   ├── app/                             # Core application package
+│   │   ├── api/                         # REST API routes and Pydantic schemas
+│   │   │   ├── __init__.py
+│   │   │   ├── routes.py                # Endpoint definitions (/verifications, /health)
+│   │   │   └── schemas.py               # Request, response, and domain models
+│   │   ├── core/                        # Configuration and error primitives
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py                # BaseSettings and environment mappings
+│   │   │   └── errors.py                # Typed domain exceptions (503, 504, 499)
+│   │   ├── db/                          # Database connection and persistence
+│   │   │   ├── __init__.py
+│   │   │   └── database.py              # Async SQLite persistence with WAL & retry
+│   │   ├── providers/                   # External search and LLM synthesis clients
+│   │   │   ├── __init__.py              # Provider factory getters
+│   │   │   ├── base.py                  # Abstract SearchProvider and ModelProvider
+│   │   │   ├── brave.py                 # Brave Search API integration
+│   │   │   ├── meta.py                  # Meta / OpenAI-compatible LLM client
+│   │   │   └── mock.py                  # Deterministic offline mock providers
+│   │   ├── services/                    # Core business logic and verification engine
+│   │   │   ├── __init__.py
+│   │   │   └── verification.py          # Bounded retrieval, citation validation, policy
+│   │   └── main.py                      # FastAPI app initialization, lifespan, CORS
+│   ├── pyproject.toml                   # Python dependencies, Ruff, Pyright, Pytest config
+│   └── tests/                           # Backend test suite
+│       ├── conftest.py                  # Shared fixtures and mock configurations
+│       ├── integration/                 # End-to-end API and concurrency tests
+│       │   ├── test_api.py              # API endpoint integration tests
+│       │   └── test_concurrency.py      # High-concurrency database lock tests
+│       └── unit/                        # Isolated unit tests
+│           ├── test_budget.py           # 8.0s monotonic SLA budget & guard tests
+│           ├── test_citations.py        # Strict verbatim citation validation tests
+│           ├── test_classification.py   # Gate A empirical screening tests
+│           ├── test_db.py               # Database CRUD and retry logic tests
+│           ├── test_evals_offline.py    # Offline evaluation threshold assertions
+│           ├── test_pipeline.py         # Verification pipeline execution tests
+│           ├── test_policy.py           # Application verdict policy matrix tests
+│           ├── test_providers.py        # Provider error handling and parsing tests
+│           ├── test_schemas.py          # Schema validation tests
+│           └── test_swe_sweep_bugs.py   # Regressions discovered during SWE-sweep
+├── frontend/                            # Next.js React workbench application
+│   ├── app/                             # App Router layout and pages
+│   │   ├── globals.css                  # Global styles and Tailwind v4 directives
+│   │   ├── layout.tsx                   # Root HTML shell and metadata
+│   │   └── page.tsx                     # Full verification workbench user interface
+│   ├── components/                      # UI components
+│   │   ├── ui/                          # Shadcn UI primitives
+│   │   │   └── button.tsx               # Accessible button component
+│   │   └── components.json              # Shadcn configuration
+│   ├── lib/                             # Shared frontend utilities and clients
+│   │   ├── api.ts                       # Typed REST client with error envelopes
+│   │   └── utils.ts                     # Tailwind class merging helpers (cn)
+│   ├── package.json                     # Frontend dependencies and npm scripts
+│   ├── playwright.config.ts             # Playwright E2E configuration
+│   ├── postcss.config.mjs               # PostCSS & Tailwind v4 plugin config
+│   ├── tests/                           # Frontend automated tests
+│   │   └── e2e/
+│   │       └── workbench.spec.ts        # Playwright E2E browser tests
+│   └── tsconfig.json                    # TypeScript compiler configuration
+├── evals/                               # Factuality and SLA evaluation harness
+│   ├── cases.jsonl                      # Curated benchmark claims with ground truth
+│   ├── results.json                     # Latest evaluation benchmark outputs
+│   └── run_evals.py                     # Offline evaluation benchmark CLI runner
+├── scripts/                             # Repository tooling and maintenance
+│   └── run_security_audit.sh            # Security audit gate (Semgrep, pip-audit, npm)
+├── swe-sweep/                           # Autonomous bug discovery harness integration
+├── misc/                                # Design documents, research notes, and specs
+│   └── docs/designs/                    # Architecture and design specifications
+└── .planning/                           # GSD roadmap, state, and codebase maps
+    ├── codebase/                        # Generated codebase map documents
+    ├── PROJECT.md                       # Project overview and goals
+    ├── REQUIREMENTS.md                  # System requirements and specifications
+    ├── ROADMAP.md                       # Phase planning and governance
+    └── STATE.md                         # Current milestone and session state
 ```
 
-## Key Directory Descriptions
+## Directory Purposes
 
-### `backend/app/` — Core Application Logic
-- **`api/`** — FastAPI route definitions and endpoints
-  - Verification API (`/api/v1/`)
-  - Gateway endpoint with lifespan and CORS
-- **`core/`** — Fundamental utilities
-  - Error types (`ProviderTimeoutError`, etc.)
-  - Configuration management
-  - SLA guard enforcement
-- **`db/`** — Database module
-  - `Database` class with `@asynccontextmanager _connect()`
-  - `PRAGMA busy_timeout = 5000;` and `PRAGMA synchronous = NORMAL;`
-  - `json.loads()` for JSON column decoding
-  - `verifications` table (flat, JSON columns)
-- **`providers/`** — External service integrations
-  - Model providers (Meta AI `muse-spark-1.3`)
-  - Search providers (Brave Search API)
-  - Mock providers for testing
-- **`services/`** — Business logic services
-  - `VerificationPipeline` — Orchestrates two-stage retrieval
-  - Gate A pre-retrieval screening
-  - Structured synthesis call
-- **`schemas.py`** — Pydantic data models
-  - `SourceItem` — Search result with stance, hash, provenance
-  - `VerificationSynthesisPayload` — JSON schema for LLM output
-  - `PublicVerdict` — `supported|contradicted|mixed|insufficient_evidence|not_verifiable`
-  - `ReasoningStatement` — Citation-backed reasoning
+**`backend/app/`:**
+- Purpose: Complete server-side verification application
+- Contains: API routes, business logic services, database interactions, provider clients
+- Key files: `backend/app/main.py`, `backend/app/services/verification.py`
 
-### `frontend/` — User Interface
-- **`package.json`** — Node.js dependencies (Playwright, React, Tailwind)
-- **`playwright.config.ts`** — Test configuration (Chromium + Firefox)
-- **`src/`** — React components and pages
-  - Workbench component (main user interface)
-  - Verification result display
-  - Verdict badge with color tokens
-  - Source card components
-  - Relationship map visualization
-  - Settings modal (keyboard navigation, Escape dismissal)
-- **`tests/e2e/workbench.spec.ts`** — E2E test suite
+**`backend/tests/`:**
+- Purpose: Unit and integration testing suites
+- Contains: Pytest suites covering SLA budgeting, citation validation, concurrency, and API contracts
+- Key files: `backend/tests/unit/test_budget.py`, `backend/tests/integration/test_concurrency.py`
 
-### `evals/` — Evaluation & Benchmarking
-- **`cases.jsonl`** — 27 curated benchmark cases (7 categories)
-- **`run_evals.py`** — Decoupled evaluation runner (ADR-005)
-  - Isolates model reasoning from retrieval noise
-  - Tier 1/2 citation entailment evaluation
-  - Verdict counterevidence compliance check
-  - Gate A screening evaluation
-  - Generates `results.json` report
-- **`results.json`** — Machine-readable evaluation output
+**`frontend/app/`:**
+- Purpose: Next.js frontend pages and layouts
+- Contains: Root application entry, UI views, styling
+- Key files: `frontend/app/page.tsx`, `frontend/app/globals.css`
 
-### `scripts/` — Utility Scripts
-- **`run_security_audit.sh`** — Three-part security audit
-  - `semgrep scan --config auto backend/app/`
-  - `pip-audit` for Python dependencies
-  - `npm --prefix frontend audit --audit-level=high`
+**`frontend/lib/`:**
+- Purpose: Client-side shared library and API connectors
+- Contains: Type definitions, HTTP communication, utility functions
+- Key files: `frontend/lib/api.ts`, `frontend/lib/utils.ts`
 
-### `.planning/` — Project Planning & Governance
-- **`ROADMAP.md`** — 4-phase governance structure
-  - Phase 1: Foundations, Data Contracts & External Providers
-  - Phase 2: Verification Engine, Citation Validation & API Gateway
-  - Phase 3: Frontend Wiring & Full-Stack Integration
-  - Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking
-- **`STATE.md`** — Current project state tracking
-- **`REQUIREMENTS.md`** — Project requirements and Milestone references
-- **`PROJECT.md`** — Project metadata and description
-- **`milestone.lock`** — Milestone locking mechanism
-- **`codebase/`** — Codebase mapping artifacts (STACK.md, ARCHITECTURE.md, etc.)
-- **`phases/`** — Individual phase artifacts (JINTRU-01 through JINTRU-04)
-  - `*-SUMMARY.md` — Phase completion summaries
-  - `*-PLAN.md` — Phase plans and deliverables
-  - `*-REVIEW.md` — Code review reports
+**`evals/`:**
+- Purpose: Independent factuality benchmark and SLA compliance evaluation
+- Contains: Ground truth test cases, evaluation runner script, benchmark score logs
+- Key files: `evals/run_evals.py`, `evals/cases.jsonl`
 
-## File Relationships
+**`scripts/`:**
+- Purpose: Maintenance, CI check scripts, security scanners
+- Contains: Automated security scanning scripts for SAST and dependency audits
+- Key files: `scripts/run_security_audit.sh`
 
-### Verification Flow
-1. User submits claim via frontend
-2. Gate A pre-classification (subjective/future check)
-3. Stage 1: Brave Search API (max 5 snippets)
-4. Stage 2: Dialectical counter-search
-5. Model synthesis (Meta API, `muse-spark-1.3`, temp=0.0)
-6. Structured output validation (JSON Schema)
-7. SQLite persistence (`verifications` table)
-8. Verdict determination (5-tier: supported/contradicted/mixed/insufficient_evidence/not_verifiable)
-9. Badge rendering + source cards + relationship map
+## Key File Locations
 
-### Test Execution Flow
-1. `pytest` discovers `backend/tests/unit/` and `backend/tests/integration/`
-2. `test_budget.py` validates SLA guards and timeout behavior
-3. `test_evals_offline.py` asserts factuality thresholds
-4. `test_concurrency.py` verifies SQLite WAL concurrency
-5. Results reported to CI, which gates on 100% pass rate
+**Entry Points:**
+- `backend/app/main.py`: FastAPI server entry point and application lifespan
+- `frontend/app/page.tsx`: Web application root view and workbench interface
+- `evals/run_evals.py`: Offline evaluation suite runner
 
-### CI Pipeline Flow
-1. Push to triggers GitHub Actions matrix
-2. Matrix cell runs on Python 3.12 or Node 20
-3. Backend: `pytest`, `ruff check`, `pyright`
-4. Frontend: `tsc --noEmit`
-5. Security: `semgrep`, `pip-audit`, `npm audit`
-6. Playwright E2E (selected cells)
-7. Results aggregated; failure if any job fails
+**Configuration:**
+- `backend/app/core/config.py`: Application runtime settings via Pydantic `BaseSettings`
+- `backend/pyproject.toml`: Backend dependencies, Ruff, Pyright, Pytest configuration
+- `frontend/package.json`: Frontend dependencies and build scripts
+- `frontend/tsconfig.json`: TypeScript compiler options
 
-## Commit History Snapshot (Last 10 Commits)
-1. `73b2a31` feat(phase-4): implement offline evals benchmark, live SLA benchmarking
-2. `9448928` feat(phase-4): implement verification suite, concurrency tests, E2E, security audit, CI
-3. `3f6937b` docs(planning): create Phase 4 plans
-4. `fb9c1e6` docs(phase-3): record code review fix report
-5. `2d8882e` chore(frontend): clean placeholder assets, update package name
-6. `aaac48c9` fix(frontend): remediate review findings
-7. `f1d3347` fix(security): validate URL schemes, sanitize evidence href sinks
-8. `f082075` docs(03): add code review report
-9. `2ec2dbb` chore(frontend): ignore incremental typecheck output
-10. `4a98af4` docs(03): record phase 3 summaries and blocked build gate
+**Core Logic:**
+- `backend/app/services/verification.py`: Verification pipeline, Gate A screening, 8.0s monotonic SLA budget, citation validation, and verdict policy
+- `backend/app/db/database.py`: SQLite connection pool, schema initialization, retry logic
+- `backend/app/providers/brave.py`: Brave Search integration
+- `backend/app/providers/meta.py`: LLM structured completion integration
+
+**Testing:**
+- `backend/tests/unit/`: Comprehensive backend unit tests
+- `backend/tests/integration/`: Backend integration and high-concurrency database tests
+- `frontend/tests/e2e/workbench.spec.ts`: Playwright end-to-end user experience tests
+
+## Naming Conventions
+
+**Files:**
+- Backend: Snake_case for Python source and test files (`verification.py`, `test_budget.py`)
+- Frontend: PascalCase or kebab-case for React components (`page.tsx`, `button.tsx`), camelCase for utilities and clients (`api.ts`, `utils.ts`)
+
+**Directories:**
+- Lowercase snake_case or single-word lowercase (`app`, `services`, `providers`, `components`, `e2e`)
+
+## Where to Add New Code
+
+**New Feature (Backend):**
+- Domain logic: Implement within `backend/app/services/`
+- API endpoints: Register in `backend/app/api/routes.py` with schemas in `backend/app/api/schemas.py`
+- Tests: Add corresponding unit tests in `backend/tests/unit/test_<feature>.py`
+
+**New Search or Model Provider:**
+- Implementation: Create new provider module in `backend/app/providers/<provider_name>.py` implementing `SearchProvider` or `ModelProvider`
+- Factory wiring: Register in `backend/app/providers/__init__.py`
+- Tests: Add unit tests in `backend/tests/unit/test_providers.py`
+
+**New UI Component / Modal:**
+- Implementation: Add to `frontend/components/` or `frontend/components/ui/`
+- Styling: Use Tailwind CSS v4 atomic classes
+- E2E Tests: Add assertions in `frontend/tests/e2e/workbench.spec.ts`
+
+**Utilities:**
+- Backend helpers: Add to `backend/app/core/` or `backend/app/services/`
+- Frontend helpers: Add to `frontend/lib/utils.ts`
+
+## Special Directories
+
+**`data/`:**
+- Purpose: Stores local SQLite database (`jintru.db`, `jintru.db-wal`, `jintru.db-shm`)
+- Generated: Yes (created automatically at runtime by `Database`)
+- Committed: No (ignored via `.gitignore`)
+
+**`.planning/`:**
+- Purpose: GSD system state, phase roadmaps, requirements, and codebase mappings
+- Generated: Yes
+- Committed: Yes
+
+**`evals/`:**
+- Purpose: Curated offline evaluation datasets and results
+- Generated: Results generated by `run_evals.py`
+- Committed: Yes
+
+---
+
+*Structure analysis: 2026-11-02*
