@@ -47,3 +47,4 @@ Delivered the curated offline evaluation dataset, decoupled evaluation benchmark
 - `backend/.venv/bin/pytest backend/tests/unit/test_evals_offline.py -v`: 1/1 passed.
 - `backend/.venv/bin/pytest backend/tests/ -v`: 92/92 passed (100% pass rate).
 - `ruff check backend/ evals/` and `pyright -p backend`: 0 errors.
+

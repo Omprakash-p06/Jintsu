@@ -37,3 +37,4 @@ Delivered the verification test suite, SQLite WAL multi-task concurrency test, P
 - `backend/.venv/bin/pytest backend/tests/ -v`: 91/91 passed in 2.39s (100% pass rate).
 - `ruff check backend/` and `pyright -p backend`: 0 errors.
 - `cd frontend && npx tsc --noEmit`: 0 errors.
+
