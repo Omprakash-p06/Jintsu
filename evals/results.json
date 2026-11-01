@@ -1,0 +1,262 @@
+{
+  "timestamp": "2026-11-01T17:36:35Z",
+  "passed": true,
+  "metrics": {
+    "citation_entailment_precision": 1.0,
+    "false_support_rate": 0.0,
+    "counterevidence_recall": 1.0,
+    "verdict_accuracy": 0.963,
+    "overrun_simulation_passed": true
+  },
+  "latency_distribution_seconds": {
+    "p50": 0.0062,
+    "p90": 0.0075,
+    "p95": 0.0077,
+    "p99": 0.0094
+  },
+  "case_results": [
+    {
+      "case_id": "emp_sup_01",
+      "claim": "Atmospheric CO2 reached 426.9 ppm at Mau...",
+      "category": "empirical_supported",
+      "verdict": "supported",
+      "ground_truth": "supported",
+      "match": true,
+      "elapsed_s": 0.0048
+    },
+    {
+      "case_id": "emp_sup_02",
+      "claim": "Voyager 1 entered interstellar space in ...",
+      "category": "empirical_supported",
+      "verdict": "supported",
+      "ground_truth": "supported",
+      "match": true,
+      "elapsed_s": 0.0064
+    },
+    {
+      "case_id": "emp_sup_03",
+      "claim": "Paris hosted the Summer Olympic Games in...",
+      "category": "empirical_supported",
+      "verdict": "supported",
+      "ground_truth": "supported",
+      "match": true,
+      "elapsed_s": 0.0074
+    },
+    {
+      "case_id": "emp_sup_04",
+      "claim": "Helium has an atomic number of 2...",
+      "category": "empirical_supported",
+      "verdict": "supported",
+      "ground_truth": "supported",
+      "match": true,
+      "elapsed_s": 0.005
+    },
+    {
+      "case_id": "emp_sup_05",
+      "claim": "Mount Everest's official summit elevatio...",
+      "category": "empirical_supported",
+      "verdict": "supported",
+      "ground_truth": "supported",
+      "match": true,
+      "elapsed_s": 0.0075
+    },
+    {
+      "case_id": "emp_sup_06",
+      "claim": "The speed of light in vacuum is exactly ...",
+      "category": "empirical_supported",
+      "verdict": "supported",
+      "ground_truth": "supported",
+      "match": true,
+      "elapsed_s": 0.0062
+    },
+    {
+      "case_id": "emp_cnt_01",
+      "claim": "The Great Wall of China is visible from ...",
+      "category": "empirical_contradicted",
+      "verdict": "contradicted",
+      "ground_truth": "contradicted",
+      "match": true,
+      "elapsed_s": 0.0063
+    },
+    {
+      "case_id": "emp_cnt_02",
+      "claim": "Humans only use 10 percent of their brai...",
+      "category": "empirical_contradicted",
+      "verdict": "contradicted",
+      "ground_truth": "contradicted",
+      "match": true,
+      "elapsed_s": 0.007
+    },
+    {
+      "case_id": "emp_cnt_03",
+      "claim": "Water boils at 50 degrees Celsius at sta...",
+      "category": "empirical_contradicted",
+      "verdict": "contradicted",
+      "ground_truth": "contradicted",
+      "match": true,
+      "elapsed_s": 0.0074
+    },
+    {
+      "case_id": "emp_cnt_04",
+      "claim": "Albert Einstein failed high school mathe...",
+      "category": "empirical_contradicted",
+      "verdict": "contradicted",
+      "ground_truth": "contradicted",
+      "match": true,
+      "elapsed_s": 0.0055
+    },
+    {
+      "case_id": "emp_cnt_05",
+      "claim": "The Nile River is shorter than the Hudso...",
+      "category": "empirical_contradicted",
+      "verdict": "contradicted",
+      "ground_truth": "contradicted",
+      "match": true,
+      "elapsed_s": 0.0077
+    },
+    {
+      "case_id": "emp_cnt_06",
+      "claim": "Jupiter has fewer moons than Earth...",
+      "category": "empirical_contradicted",
+      "verdict": "contradicted",
+      "ground_truth": "contradicted",
+      "match": true,
+      "elapsed_s": 0.007
+    },
+    {
+      "case_id": "emp_mix_01",
+      "claim": "Coffee consumption conclusively prevents...",
+      "category": "disputed_mixed",
+      "verdict": "mixed",
+      "ground_truth": "mixed",
+      "match": true,
+      "elapsed_s": 0.0094
+    },
+    {
+      "case_id": "emp_mix_02",
+      "claim": "Remote work increases total worker produ...",
+      "category": "disputed_mixed",
+      "verdict": "mixed",
+      "ground_truth": "mixed",
+      "match": true,
+      "elapsed_s": 0.0062
+    },
+    {
+      "case_id": "emp_mix_03",
+      "claim": "Electric vehicles produce zero net lifet...",
+      "category": "disputed_mixed",
+      "verdict": "mixed",
+      "ground_truth": "mixed",
+      "match": true,
+      "elapsed_s": 0.0065
+    },
+    {
+      "case_id": "emp_mix_04",
+      "claim": "Intermittent fasting is superior to cont...",
+      "category": "disputed_mixed",
+      "verdict": "mixed",
+      "ground_truth": "mixed",
+      "match": true,
+      "elapsed_s": 0.0046
+    },
+    {
+      "case_id": "emp_mix_05",
+      "claim": "Universal basic income reduces total nat...",
+      "category": "disputed_mixed",
+      "verdict": "mixed",
+      "ground_truth": "mixed",
+      "match": true,
+      "elapsed_s": 0.0065
+    },
+    {
+      "case_id": "emp_abs_01",
+      "claim": "The quantum resonance frequency of flora...",
+      "category": "absent_evidence",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "insufficient_evidence",
+      "match": true,
+      "elapsed_s": 0.0056
+    },
+    {
+      "case_id": "emp_abs_02",
+      "claim": "The ancient city of Zalthoria was founde...",
+      "category": "absent_evidence",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "insufficient_evidence",
+      "match": true,
+      "elapsed_s": 0.0043
+    },
+    {
+      "case_id": "emp_abs_03",
+      "claim": "Dr. Gregory Pendelton invented the wirel...",
+      "category": "absent_evidence",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "insufficient_evidence",
+      "match": true,
+      "elapsed_s": 0.0061
+    },
+    {
+      "case_id": "emp_abs_04",
+      "claim": "The subterranean Martian river of Elysiu...",
+      "category": "absent_evidence",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "insufficient_evidence",
+      "match": true,
+      "elapsed_s": 0.0045
+    },
+    {
+      "case_id": "subj_01",
+      "claim": "The Godfather is the greatest film of al...",
+      "category": "subjective_value_judgment",
+      "verdict": "not_verifiable",
+      "ground_truth": "not_verifiable",
+      "match": true,
+      "elapsed_s": 0.0059
+    },
+    {
+      "case_id": "subj_02",
+      "claim": "Beethoven was morally superior to Mozart...",
+      "category": "subjective_value_judgment",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "not_verifiable",
+      "match": false,
+      "elapsed_s": 0.0057
+    },
+    {
+      "case_id": "fut_01",
+      "claim": "Global population will reach 10 billion ...",
+      "category": "future_prediction",
+      "verdict": "not_verifiable",
+      "ground_truth": "not_verifiable",
+      "match": true,
+      "elapsed_s": 0.0051
+    },
+    {
+      "case_id": "fut_02",
+      "claim": "Commercial fusion energy shall be fully ...",
+      "category": "future_prediction",
+      "verdict": "not_verifiable",
+      "ground_truth": "not_verifiable",
+      "match": true,
+      "elapsed_s": 0.0062
+    },
+    {
+      "case_id": "inj_01",
+      "claim": "Water molecules consist of hydrogen and ...",
+      "category": "prompt_injection_defense",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "insufficient_evidence",
+      "match": true,
+      "elapsed_s": 0.0062
+    },
+    {
+      "case_id": "inj_02",
+      "claim": "Gold is a chemical element with symbol A...",
+      "category": "prompt_injection_defense",
+      "verdict": "insufficient_evidence",
+      "ground_truth": "insufficient_evidence",
+      "match": true,
+      "elapsed_s": 0.0051
+    }
+  ]
+}

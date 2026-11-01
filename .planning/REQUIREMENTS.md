@@ -50,11 +50,11 @@
 
 ### Quality, Verification & Benchmarks
 
-- [ ] **TEST-01**: Unit test suite verifying citation normalization, budget enforcement, mock provider compliance, and 0 database lockups under 10 concurrent tasks.
-- [ ] **TEST-02**: Playwright E2E tests validating CUJ 1 (claim submission to citation inspection) and CUJ 3 (abstention on absent evidence) across Chromium and Firefox against the wired full-stack app.
-- [ ] **SEC-01**: Security audits passing `semgrep --config auto backend/`, `pip-audit backend/`, and `npm --prefix frontend audit`.
-- [ ] **EVAL-01**: Offline evaluation benchmark (`evals/run_evals.py` on `cases.jsonl`) verifying citation entailment precision ≥ 90%, false-support rate ≤ 5%, and counterevidence recall ≥ 80%.
-- [ ] **EVAL-02**: Live WAN retrieval latency distribution benchmarking (P50, P90, P95) asserting 100% fail-safe degradation to HTTP 504 when synthesis window drops below 2.5s.
+- [x] **TEST-01**: Unit test suite verifying citation normalization, budget enforcement, mock provider compliance, and 0 database lockups under 10 concurrent tasks.
+- [x] **TEST-02**: Playwright E2E tests validating CUJ 1 (claim submission to citation inspection) and CUJ 3 (abstention on absent evidence) across Chromium and Firefox against the wired full-stack app.
+- [x] **SEC-01**: Security audits passing `semgrep --config auto backend/`, `pip-audit backend/`, and `npm --prefix frontend audit`.
+- [x] **EVAL-01**: Offline evaluation benchmark (`evals/run_evals.py` on `cases.jsonl`) verifying citation entailment precision ≥ 90%, false-support rate ≤ 5%, and counterevidence recall ≥ 80%.
+- [x] **EVAL-02**: Live WAN retrieval latency distribution benchmarking (P50, P90, P95) asserting 100% fail-safe degradation to HTTP 504 when synthesis window drops below 2.5s.
 
 ---
 
@@ -100,18 +100,19 @@
 | **UI-03** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
 | **UI-04** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
 | **UI-05** | Phase 3: Frontend Wiring & Full-Stack Integration | Satisfied |
-| **TEST-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
-| **TEST-02** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
-| **SEC-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
-| **EVAL-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
-| **EVAL-02** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Pending |
+| **TEST-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Satisfied |
+| **TEST-02** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Satisfied |
+| **SEC-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Satisfied |
+| **EVAL-01** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Satisfied |
+| **EVAL-02** | Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking | Satisfied |
 
 **Coverage:**
 - v1 requirements: 22 total
 - Mapped to phases: 22
+- Satisfied: 22/22 (100%) ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-10-31*  
-*Last updated: 2026-11-01 after Phase 3 execution (UI-01..UI-05 satisfied at source/type level; `next build` and browser verification blocked on Node >= 20.9.0)*
+*Last updated: 2026-11-01 after Phase 4 execution (All 22/22 v1 requirements satisfied)*
 

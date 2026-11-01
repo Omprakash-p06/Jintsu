@@ -40,6 +40,7 @@ line-length = 100
 
 [tool.pyright]
 include = ["app", "tests"]
+extraPaths = [".."]
 venvPath = "."
 venv = ".venv"
 

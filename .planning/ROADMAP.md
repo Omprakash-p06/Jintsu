@@ -24,7 +24,7 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
 - [x] **Phase 1: Foundations, Data Contracts & External Providers** - Core Python 3.12 dependencies, Pydantic schemas, SQLite WAL persistence, and Brave Search / Meta Model provider adapters.
 - [x] **Phase 2: Verification Engine, Citation Validation & API Gateway** - Clock-bounded monotonic pipeline, Gate A classification, 2-tier citation matching, verdict policy with counterevidence guardrails, and FastAPI REST endpoints.
 - [x] **Phase 3: Frontend Wiring & Full-Stack Integration** - Wire the existing Next.js 16 + React 19 + Tailwind CSS v4 workbench prototype to the FastAPI backend, connecting real claim submission, live timers, 5-way verdict badge, source evidence cards, relationship map, and history drawer.
-- [ ] **Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking** - Automated unit/integration tests, Playwright E2E tests, security audits, and quantitative offline/live evaluation benchmarks.
+- [x] **Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking** - Automated unit/integration tests, Playwright E2E tests, security audits, and quantitative offline/live evaluation benchmarks.
 
 ---
 
@@ -128,8 +128,8 @@ This roadmap defines the end-to-end execution path for Reality Check AI (`jintru
   5. Live WAN retrieval benchmark tracks latency distribution (P50, P90, P95) and confirms that 100% of injected latency spikes reducing synthesis time below 2.5s degrade cleanly to HTTP 504 Gateway Timeout.
 
 **Plans**: 2 plans
-- [ ] 04-01: Unit, integration, concurrency, Playwright E2E test suites, and security audit automation.
-- [ ] 04-02: Curated offline evaluation benchmark harness and live WAN latency distribution benchmarking.
+- [x] 04-01: Unit, integration, concurrency, Playwright E2E test suites, and security audit automation.
+- [x] 04-02: Curated offline evaluation benchmark harness and live WAN latency distribution benchmarking.
 
 ---
 
@@ -141,7 +141,7 @@ Phases execute in numeric order: Phase 1 → Phase 2 → Phase 3 → Phase 4
 | Phase | Plans Complete | Status | Completed |
 |-------|:--------------:|:------:|:---------:|
 | 1. Foundations, Data Contracts & External Providers | 2/2 | Complete | 2026-10-31 |
-| 2. Verification Engine, Citation Validation & API Gateway | 0/2 | Ready to plan | - |
-| 3. Frontend Wiring & Full-Stack Integration | 0/2 | Not started | - |
-| 4. Verification Suite, Offline Evals & Live SLA Benchmarking | 0/2 | Not started | - |
+| 2. Verification Engine, Citation Validation & API Gateway | 2/2 | Complete | 2026-11-01 |
+| 3. Frontend Wiring & Full-Stack Integration | 2/2 | Complete | 2026-11-01 |
+| 4. Verification Suite, Offline Evals & Live SLA Benchmarking | 2/2 | Complete | 2026-11-01 |
 
