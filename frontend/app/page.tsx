@@ -39,6 +39,7 @@ import {
   isApiError,
   listVerifications,
   purgeVerifications,
+  safeHref,
 } from '@/lib/api'
 import type {
   HealthResponse,
@@ -122,11 +123,24 @@ function VerdictBadge({ verdict }: { verdict: PublicVerdict }) {
 
 function SourceCard({ source }: { source: SourceItem }) {
   const [expanded, setExpanded] = useState(false)
+  const [copiedQuote, setCopiedQuote] = useState(false)
   const stance = stanceMeta[source.stance]
   const wire = wireLabel(source.source_family_id)
   const excerpt = source.exact_quote ?? source.snippet
   const when =
     formatWhen(source.published_at) || formatWhen(source.retrieved_at, 'Retrieved ')
+  const safeUrl = safeHref(source.url)
+
+  async function handleCopyQuote() {
+    if (!navigator.clipboard?.writeText) return
+    try {
+      await navigator.clipboard.writeText(excerpt)
+      setCopiedQuote(true)
+      setTimeout(() => setCopiedQuote(false), 1600)
+    } catch {
+      // Ignore clipboard write failures in non-secure or restricted context
+    }
+  }
 
   return (
     <article className={`source-card ${source.stance}`}>
@@ -176,16 +190,19 @@ function SourceCard({ source }: { source: SourceItem }) {
         </div>
       ) : null}
       <div className="source-actions">
-        {source.url && !source.is_quarantined ? (
-          <a className="text-btn" href={source.url} target="_blank" rel="noopener noreferrer">
+        {safeUrl && !source.is_quarantined ? (
+          <a className="text-btn" href={safeUrl} target="_blank" rel="noopener noreferrer">
             View evidence <ArrowUpRight size={13} />
           </a>
         ) : null}
         <button
+          type="button"
           className="text-btn"
-          onClick={() => navigator.clipboard?.writeText(excerpt)}
+          onClick={() => void handleCopyQuote()}
+          aria-label={copiedQuote ? 'Quote copied' : 'Copy quote'}
         >
-          <Copy size={13} /> Copy quote
+          {copiedQuote ? <Check size={13} /> : <Copy size={13} />}
+          {copiedQuote ? 'Copied' : 'Copy quote'}
         </button>
       </div>
     </article>
@@ -290,6 +307,46 @@ export default function Page() {
   const [showSettings, setShowSettings] = useState(false)
   const [copied, setCopied] = useState(false)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const settingsPanelRef = useRef<HTMLElement>(null)
+  const settingsCloseBtnRef = useRef<HTMLButtonElement>(null)
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null)
+  const prevShowSettingsRef = useRef(showSettings)
+
+  useEffect(() => {
+    if (showSettings) {
+      settingsCloseBtnRef.current?.focus()
+    } else if (prevShowSettingsRef.current) {
+      settingsTriggerRef.current?.focus()
+    }
+    prevShowSettingsRef.current = showSettings
+  }, [showSettings])
+
+  useEffect(() => {
+    if (!showSettings) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowSettings(false)
+        return
+      }
+      if (event.key === 'Tab' && settingsPanelRef.current) {
+        const focusable = settingsPanelRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )
+        if (!focusable.length) return
+        const first = focusable[0]
+        const last = focusable[focusable.length - 1]
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault()
+          last.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first.focus()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showSettings])
 
   const stopTimer = useCallback(() => {
     if (timerRef.current !== null) {
@@ -383,7 +440,6 @@ export default function Page() {
       const record = await getVerification(item.id)
       setResult(record)
       setActiveId(record.id)
-      setClaim(record.claim)
     } catch (err) {
       setError(
         isApiError(err)
@@ -436,7 +492,7 @@ export default function Page() {
     setError(null)
   }
 
-  function copyReport() {
+  async function copyReport() {
     if (!result) return
     const report = [
       '# Verification report',
@@ -452,9 +508,14 @@ export default function Page() {
       '## Sources',
       ...result.sources.map((source) => `- [${source.stance}] ${source.title} (${source.domain}) ${source.url}`),
     ].join('\n')
-    navigator.clipboard?.writeText(report)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 1600)
+    if (!navigator.clipboard?.writeText) return
+    try {
+      await navigator.clipboard.writeText(report)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1600)
+    } catch {
+      // Ignore clipboard write failures in non-secure context
+    }
   }
 
   function exportJson() {
@@ -464,7 +525,9 @@ export default function Page() {
     const anchor = document.createElement('a')
     anchor.href = url
     anchor.download = `jintru-verification-${result.id}.json`
+    document.body.appendChild(anchor)
     anchor.click()
+    anchor.remove()
     URL.revokeObjectURL(url)
   }
 
@@ -549,7 +612,7 @@ export default function Page() {
             >
               {dark ? <Sun size={17} /> : <Moon size={17} />}
             </button>
-            <button className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Open settings">
+            <button ref={settingsTriggerRef} className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Open settings">
               <Settings2 size={17} />
             </button>
             <div className="avatar">OM</div>
@@ -804,7 +867,11 @@ export default function Page() {
           <section className="unknown panel-section" id="history">
             <div className="section-heading">
               <div>
-                <span className="eyebrow">HISTORY</span>
+                <span className="eyebrow">
+                  {historyTotal > history.length
+                    ? `HISTORY (SHOWING ${history.length} OF ${historyTotal})`
+                    : `HISTORY (${historyTotal})`}
+                </span>
                 <h2>Past verifications</h2>
               </div>
               <History size={18} />
@@ -820,24 +887,21 @@ export default function Page() {
                   <div
                     key={item.id}
                     className={`history-item ${activeId === item.id ? 'active' : ''}`}
-                    role="button"
-                    tabIndex={0}
                     aria-current={activeId === item.id ? 'true' : undefined}
-                    onClick={() => void openHistoryItem(item)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault()
-                        void openHistoryItem(item)
-                      }
-                    }}
                   >
-                    <span style={{ flex: 1 }}>
-                      {item.claim}
+                    <button
+                      type="button"
+                      className="history-select-btn"
+                      onClick={() => void openHistoryItem(item)}
+                      aria-label={`View verification for: ${item.claim}`}
+                    >
+                      <span className="history-claim-text">{item.claim}</span>
                       <span className="history-meta">
                         {verdictMeta[item.public_verdict].label} · {formatWhen(item.created_at)}
                       </span>
-                    </span>
+                    </button>
                     <button
+                      type="button"
                       className="icon-btn"
                       aria-label={`Delete verification: ${item.claim}`}
                       onClick={(event) => void removeHistoryItem(event, item)}
@@ -865,6 +929,7 @@ export default function Page() {
       {showSettings && (
         <div className="settings-overlay" onClick={() => setShowSettings(false)}>
           <section
+            ref={settingsPanelRef}
             className="settings-panel"
             role="dialog"
             aria-modal="true"
@@ -876,7 +941,12 @@ export default function Page() {
                 <span className="eyebrow">PREFERENCES</span>
                 <h2>Settings</h2>
               </div>
-              <button className="icon-btn" onClick={() => setShowSettings(false)} aria-label="Close settings">
+              <button
+                ref={settingsCloseBtnRef}
+                className="icon-btn"
+                onClick={() => setShowSettings(false)}
+                aria-label="Close settings"
+              >
                 <X size={18} />
               </button>
             </div>
