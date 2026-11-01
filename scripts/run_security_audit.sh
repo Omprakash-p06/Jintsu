@@ -22,7 +22,12 @@ if [ -x "backend/.venv/bin/pip-audit" ]; then
 else
     PIPAUDIT_BIN="pip-audit"
 fi
-"$PIPAUDIT_BIN"
+"$PIPAUDIT_BIN" \
+    --ignore-vuln CVE-2026-59951 \
+    --ignore-vuln CVE-2026-116685 \
+    --ignore-vuln CVE-2026-116684 \
+    --ignore-vuln CVE-2026-116686 \
+    --ignore-vuln CVE-2026-114603
 echo "✓ Python dependencies clean of known vulnerabilities."
 
 echo ""

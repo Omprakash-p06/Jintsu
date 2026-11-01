@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
     BRAVE_API_KEY: str = ""
     META_API_KEY: str = ""
@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     REQUEST_DEADLINE_SECONDS: float = 8.0
     BRAVE_RETRIEVAL_MODE: Literal["snippets", "context"] = "snippets"
     USE_MOCK_PROVIDERS: bool = False
+    CACHE_ENABLED: bool = False
 
 
 settings = Settings()
