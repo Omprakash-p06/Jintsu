@@ -48,3 +48,10 @@ dist/
 .env.local
 .env.*.local
 
+# External Tooling & Benchmarks
+swe-sweep/
+.swe-sweep/
+.graphicle/
+
+
+

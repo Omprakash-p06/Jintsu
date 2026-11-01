@@ -87,7 +87,11 @@ Never improvise alternative architectures, re-open locked architectural decision
 - All development must follow the 4 coarse phases in `.planning/ROADMAP.md`:
   1. `Phase 1: Foundations, Data Contracts & External Providers`
   2. `Phase 2: Verification Engine, Citation Validation & API Gateway`
-  3. `Phase 3: React Workbench UI & Full-Stack Integration`
+  3. `Phase 3: Frontend Wiring & Full-Stack Integration`
   4. `Phase 4: Verification Suite, Offline Evals & Live SLA Benchmarking`
 - Every phase plan (`*-PLAN.md`) must cite the SSOT documents in `misc/` as its foundation.
+
+## 13. Graphicle Cross-File Coherence Invariant
+- During both phase planning and execution, always use Graphicle (`graphicle context "<question>"`, or MCP tools `recall_project`, `query_graph`, `get_node`, `get_neighbors`) to connect all architectural dots across files, dependencies, contracts, and history before introducing changes. No phase plan or execution step may introduce disconnected symbols, mismatched interfaces, or orphaned configurations. All code symbols, API routes, and schema structures must be verified for cross-file alignment.
+
 
