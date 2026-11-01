@@ -20,10 +20,10 @@ help:
 	@echo "  make clean      - Clean temporary files, caches, and test artifacts"
 
 setup:
-	./setup.sh
+	python3 setup.py
 
 start:
-	./start.sh
+	python3 run.py
 
 dev: start
 

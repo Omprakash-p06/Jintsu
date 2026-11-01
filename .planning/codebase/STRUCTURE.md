@@ -83,8 +83,10 @@ last_mapped_at: 2026-11-02
 │   └── run_evals.py                     # Offline evaluation benchmark CLI runner
 ├── scripts/                             # Repository tooling and maintenance
 │   └── run_security_audit.sh            # Security audit gate (Semgrep, pip-audit, npm)
-├── setup.sh                             # One-command project setup and dependency install
-├── start.sh                             # One-command full-stack launcher (backend + frontend)
+├── setup.py                             # Universal cross-platform setup script (Windows, macOS, Linux)
+├── run.py                               # Universal cross-platform full-stack launcher (Windows, macOS, Linux)
+├── setup.sh                             # POSIX shell setup wrapper
+├── start.sh                             # POSIX shell full-stack launcher wrapper
 ├── Makefile                             # Developer task targets
 ├── docker-compose.yml                   # Containerized full-stack deployment
 ├── .env.example                         # Environment configuration template

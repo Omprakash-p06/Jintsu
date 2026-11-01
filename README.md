@@ -58,21 +58,29 @@ Reality Check AI (`jintru`) evaluates single empirical assertions within a stric
 
 ---
 
-## ⚡ Quickstart: One-Command Setup & Run
+## ⚡ Quickstart: One-Command Universal Setup & Run
 
-### 1. One-Command Setup
-Install all backend and frontend dependencies, initialize the `.env` file, and prepare the SQLite database with a single command:
+### 1. Universal Setup (Windows, macOS, Linux)
+Install all backend and frontend dependencies, initialize the `.env` file, and prepare the SQLite database with a single cross-platform Python command:
 
 ```bash
+# Works natively on Windows, macOS, and Linux
+python setup.py
+
+# Alternatively, on POSIX / bash:
 ./setup.sh
 # or using Makefile:
 make setup
 ```
 
-### 2. One-Command Start
+### 2. Universal Full-Stack Start (Windows, macOS, Linux)
 Launch both the FastAPI backend (`http://localhost:8000`) and the Next.js frontend (`http://localhost:3000`) with a single command:
 
 ```bash
+# Works natively on Windows, macOS, and Linux
+python run.py
+
+# Alternatively, on POSIX / bash:
 ./start.sh
 # or using Makefile:
 make dev
@@ -144,19 +152,22 @@ jintru/
 │   └── run_evals.py             # Offline evaluation benchmark CLI runner (ADR-005)
 ├── scripts/
 │   └── run_security_audit.sh    # Semgrep SAST, pip-audit, and npm audit security gate
-├── setup.sh                     # Automated one-command project setup
-├── start.sh                     # Automated one-command full-stack launcher
+├── setup.py                     # Universal cross-platform setup script (Windows, macOS, Linux)
+├── run.py                       # Universal cross-platform full-stack runner (Windows, macOS, Linux)
+├── setup.sh                     # POSIX shell setup wrapper
+├── start.sh                     # POSIX shell launcher wrapper
 ├── Makefile                     # Developer convenience Makefile
 ├── docker-compose.yml           # Multi-container orchestration
 ├── .env.example                 # Environment configuration template
-└── .env                         # Local runtime environment settings
+├── .env                         # Local runtime environment settings
+└── README.md                    # Complete project guide and codebase map
 ```
 
 ---
 
 ## 🔧 Environment Configuration (`.env`)
 
-Configure `.env` at the project root (copied automatically from `.env.example` by `./setup.sh`):
+Configure `.env` at the project root (copied automatically from `.env.example` by `python setup.py`):
 
 ```bash
 # --- Provider Mode ---
