@@ -167,11 +167,36 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return (await response.json()) as T
 }
 
-export function createVerification(claim: string): Promise<VerificationResponse> {
-  return request<VerificationResponse>('/verifications', {
+export function safeHref(url: string | null | undefined): string | null {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.toString() : null
+  } catch {
+    return null
+  }
+}
+
+export function normalizeSource(source: SourceItem): SourceItem {
+  return {
+    ...source,
+    url: safeHref(source.url) ?? '',
+  }
+}
+
+export function normalizeVerification(verification: VerificationResponse): VerificationResponse {
+  return {
+    ...verification,
+    sources: (verification.sources ?? []).map(normalizeSource),
+  }
+}
+
+export async function createVerification(claim: string): Promise<VerificationResponse> {
+  const response = await request<VerificationResponse>('/verifications', {
     method: 'POST',
     body: JSON.stringify({ claim }),
   })
+  return normalizeVerification(response)
 }
 
 export function listVerifications(params: {
@@ -182,8 +207,9 @@ export function listVerifications(params: {
   return request<PaginatedVerificationResponse>(`/verifications${toQuery(params)}`)
 }
 
-export function getVerification(id: string): Promise<VerificationResponse> {
-  return request<VerificationResponse>(`/verifications/${encodeURIComponent(id)}`)
+export async function getVerification(id: string): Promise<VerificationResponse> {
+  const response = await request<VerificationResponse>(`/verifications/${encodeURIComponent(id)}`)
+  return normalizeVerification(response)
 }
 
 export function deleteVerification(id: string): Promise<void> {

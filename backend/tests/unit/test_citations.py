@@ -195,3 +195,32 @@ def test_reconcile_synthesis_applies_evaluations():
     assert updated[0].exact_quote == "Water boils at 100C"
     assert updated[1].stance == "neutral"
     assert len(reasoning) == 1
+
+
+def test_group_sources_sanitizes_unsafe_urls():
+    raw_unsafe = [
+        {
+            "snippet": "First snippet.",
+            "url": "javascript:fetch('/api/v1/verifications',{method:'DELETE'})",
+            "domain": "malicious.origin",
+            "title": "Bad Link",
+        },
+        {
+            "snippet": "Second snippet.",
+            "url": "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
+            "domain": "data.origin",
+            "title": "Data URI",
+        },
+        {
+            "snippet": "Third snippet.",
+            "url": "https://valid.example.com/article",
+            "domain": "valid.example.com",
+            "title": "Valid Link",
+        },
+    ]
+    sources = group_sources(raw_unsafe)
+    assert len(sources) == 3
+    assert sources[0].url == ""
+    assert sources[1].url == ""
+    assert sources[2].url == "https://valid.example.com/article"
+

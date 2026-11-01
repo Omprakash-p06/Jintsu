@@ -184,6 +184,17 @@ def normalize_excerpt(text: str) -> str:
     return _WHITESPACE_PATTERN.sub(" ", replaced).strip()
 
 
+def _is_safe_http_url(url: str) -> bool:
+    """Validate that a URL uses http or https and has a valid netloc."""
+    if not url:
+        return False
+    try:
+        parsed = urlparse(url)
+        return parsed.scheme.lower() in ("http", "https") and bool(parsed.netloc)
+    except (ValueError, AttributeError):
+        return False
+
+
 def _canonical_domain(url: str) -> str:
     return urlparse(url).netloc.lower().removeprefix("www.")
 
@@ -220,8 +231,9 @@ def group_sources(raw_results: list[dict]) -> list[SourceItem]:
         snippet, is_quarantined = sanitize_and_quarantine(str(raw.get("snippet") or ""))
         if not snippet:
             continue
-        url = str(raw.get("url") or "")
-        domain = _canonical_domain(url) or str(raw.get("domain") or "") or "unknown"
+        raw_url = str(raw.get("url") or "").strip()
+        url = raw_url if _is_safe_http_url(raw_url) else ""
+        domain = _canonical_domain(url) if url else str(raw.get("domain") or "") or "unknown"
         title = str(raw.get("title") or "")
         # Hash the text that is actually stored, not the provider's raw payload: the
         # provider hashes pre-sanitization text, which would make content_hash identify
