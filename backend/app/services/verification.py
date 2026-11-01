@@ -168,9 +168,7 @@ class VerificationPipeline:
 
         if raw_results and remaining() >= STAGE2_MIN_REMAINING_SECONDS:
             counter_query = f"{claim} (dispute OR controversy OR false OR criticism OR debunk)"
-            cached_counter = self.cache.get(
-                counter_query, mode=self.settings.BRAVE_RETRIEVAL_MODE
-            )
+            cached_counter = self.cache.get(counter_query, mode=self.settings.BRAVE_RETRIEVAL_MODE)
             if cached_counter is not None:
                 counter_results = list(cached_counter)
             else:

@@ -223,4 +223,3 @@ def test_group_sources_sanitizes_unsafe_urls():
     assert sources[0].url == ""
     assert sources[1].url == ""
     assert sources[2].url == "https://valid.example.com/article"
-

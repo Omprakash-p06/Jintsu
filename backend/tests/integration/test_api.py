@@ -173,7 +173,11 @@ async def test_health_reports_configuration_without_secrets(tmp_path: Path) -> N
 @pytest.mark.parametrize(
     ("exc", "status_code", "code"),
     [
-        (ProviderTimeoutError("Provider timed out", code="PROVIDER_TIMEOUT"), 504, "PROVIDER_TIMEOUT"),
+        (
+            ProviderTimeoutError("Provider timed out", code="PROVIDER_TIMEOUT"),
+            504,
+            "PROVIDER_TIMEOUT",
+        ),
         (ProviderUnavailableError("Provider down"), 503, "PROVIDER_UNAVAILABLE"),
         (RequestConstraintError("Compound claim rejected"), 422, "REQUEST_CONSTRAINT_ERROR"),
         (

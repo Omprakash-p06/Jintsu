@@ -31,7 +31,6 @@ import {
   XCircle,
 } from 'lucide-react'
 import {
-  ApiError,
   createVerification,
   deleteVerification,
   getHealth,

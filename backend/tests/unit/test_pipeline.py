@@ -28,9 +28,7 @@ class RecordingSearchProvider(SearchProvider):
         mode: str = "snippets",
         timeout: float = 2.0,
     ) -> list[dict]:
-        self.calls.append(
-            {"query": query, "count": count, "mode": mode, "timeout": timeout}
-        )
+        self.calls.append({"query": query, "count": count, "mode": mode, "timeout": timeout})
         if self._results_by_call is not None:
             index = min(len(self.calls) - 1, len(self._results_by_call) - 1)
             return list(self._results_by_call[index])
@@ -48,9 +46,7 @@ class RecordingModelProvider(ModelProvider):
         snippets: list[dict],
         timeout: float = 3.0,
     ) -> VerificationSynthesisPayload:
-        self.calls.append(
-            {"claim": claim, "snippets": list(snippets), "timeout": timeout}
-        )
+        self.calls.append({"claim": claim, "snippets": list(snippets), "timeout": timeout})
         if self._payload is not None:
             return self._payload
         return VerificationSynthesisPayload(proposed_verdict="supported", summary="Model output.")
