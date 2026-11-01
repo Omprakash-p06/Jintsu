@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 PublicVerdict = Literal[
     "supported",
@@ -15,6 +15,16 @@ SourceStance = Literal["supports", "refutes", "neutral"]
 
 class VerificationRequest(BaseModel):
     claim: str = Field(..., min_length=5, max_length=500)
+
+    @field_validator("claim")
+    @classmethod
+    def validate_claim_not_whitespace(cls, v: str) -> str:
+        stripped = v.strip()
+        if len(stripped) < 5:
+            raise ValueError("Claim must contain at least 5 non-whitespace characters.")
+        if len(stripped) > 500:
+            raise ValueError("Claim must not exceed 500 characters.")
+        return stripped
 
 
 class SourceItem(BaseModel):

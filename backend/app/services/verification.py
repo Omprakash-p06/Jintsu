@@ -84,7 +84,7 @@ _STATUTORY_CONTEXT_PATTERN = re.compile(
     re.IGNORECASE,
 )
 _FUTURE_YEAR_PATTERN = re.compile(
-    r"\b(?:in|by|until|during|through|for)\s+(20[2-9]\d)\b",
+    r"\b(?:in|by|until|during|through|for|before|after|between|and|to|from)\s+(20[2-9]\d)\b",
     re.IGNORECASE,
 )
 _PROSPECTIVE_MODAL_PATTERN = re.compile(
@@ -135,12 +135,14 @@ def _is_subjective(claim: str) -> bool:
 
 
 def _is_future_prediction(claim: str, current_year: int | None = None) -> bool:
-    year_match = _FUTURE_YEAR_PATTERN.search(claim)
-    if year_match is None:
-        return False
-    year = int(year_match.group(1))
     reference_year = current_year if current_year is not None else datetime.now(UTC).year
-    if year <= reference_year:
+    has_future_year = False
+    for match in _FUTURE_YEAR_PATTERN.finditer(claim):
+        year = int(match.group(1))
+        if year > reference_year:
+            has_future_year = True
+            break
+    if not has_future_year:
         return False
     return _PROSPECTIVE_MODAL_PATTERN.search(claim) is not None
 
@@ -174,7 +176,8 @@ def sanitize_and_quarantine(snippet: str) -> tuple[str, bool]:
 
 def normalize_excerpt(text: str) -> str:
     """Normalize excerpt text for verbatim provenance matching (Tier 2)."""
-    unescaped = html.unescape(text or "")
+    cleaned = _CONTROL_CHAR_PATTERN.sub("", text or "")
+    unescaped = html.unescape(cleaned)
     replaced = (
         unescaped.replace("\u2018", "'")
         .replace("\u2019", "'")
@@ -207,6 +210,7 @@ def _registrable_domain(host: str) -> str:
     """
     if not host:
         return ""
+    host = host.split(":")[0].strip().lower().removeprefix("www.")
     parts = host.split(".")
     if len(parts) <= 2 or all(part.isdigit() for part in parts):
         return host
@@ -233,7 +237,10 @@ def group_sources(raw_results: list[dict]) -> list[SourceItem]:
             continue
         raw_url = str(raw.get("url") or "").strip()
         url = raw_url if _is_safe_http_url(raw_url) else ""
-        domain = _canonical_domain(url) if url else str(raw.get("domain") or "") or "unknown"
+        if url:
+            domain = _canonical_domain(url)
+        else:
+            domain = str(raw.get("domain") or "").strip().lower().removeprefix("www.") or "unknown"
         title = str(raw.get("title") or "")
         # Hash the text that is actually stored, not the provider's raw payload: the
         # provider hashes pre-sanitization text, which would make content_hash identify
