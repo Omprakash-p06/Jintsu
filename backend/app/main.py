@@ -13,6 +13,7 @@ from app.api.routes import router
 from app.api.schemas import ErrorEnvelope
 from app.core.config import Settings, settings
 from app.core.errors import (
+    ClientDisconnectedError,
     ProviderTimeoutError,
     ProviderUnavailableError,
     RequestConstraintError,
@@ -41,6 +42,11 @@ async def _provider_timeout_handler(request: Request, exc: Exception) -> JSONRes
 async def _provider_unavailable_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, ProviderUnavailableError)
     return _envelope(503, exc.message, exc.code, exc.detail)
+
+
+async def _client_disconnected_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, ClientDisconnectedError)
+    return _envelope(499, exc.message, exc.code, exc.detail)
 
 
 async def _constraint_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -95,6 +101,7 @@ def create_app(settings_obj: Settings | None = None) -> FastAPI:
     application.include_router(router, prefix="/api/v1")
     application.add_exception_handler(ProviderTimeoutError, _provider_timeout_handler)
     application.add_exception_handler(ProviderUnavailableError, _provider_unavailable_handler)
+    application.add_exception_handler(ClientDisconnectedError, _client_disconnected_handler)
     application.add_exception_handler(RequestConstraintError, _constraint_handler)
     application.add_exception_handler(RequestValidationError, _validation_handler)
     application.add_exception_handler(StarletteHTTPException, _http_exception_handler)

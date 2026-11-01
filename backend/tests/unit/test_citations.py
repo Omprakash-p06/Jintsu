@@ -1,3 +1,5 @@
+import hashlib
+
 from app.api.schemas import (
     ReasoningStatement,
     SourceEvaluationItem,
@@ -92,6 +94,32 @@ def test_group_sources_deduplicates_and_drops_empty_snippets():
     sources = group_sources(combined)
     assert len(sources) == 1
     assert sources[0].snippet == "Shared snippet."
+
+
+def test_group_sources_collapses_publisher_subdomains_into_one_family():
+    combined = [
+        _raw(1, "news.bbc.co.uk", "Alpha evidence."),
+        _raw(2, "sports.bbc.co.uk", "Beta evidence."),
+    ]
+    sources = group_sources(combined)
+    assert [source.domain for source in sources] == ["news.bbc.co.uk", "sports.bbc.co.uk"]
+    assert {source.source_family_id for source in sources} == {"bbc.co.uk"}
+
+
+def test_group_sources_hashes_the_stored_snippet():
+    raw = _raw(1, "example.com", "Alpha\u200b evidence.")
+    raw["content_hash"] = hashlib.sha256(b"provider-hashed-raw-payload").hexdigest()
+    sources = group_sources([raw])
+    assert sources[0].snippet == "Alpha evidence."
+    assert sources[0].content_hash == hashlib.sha256(b"Alpha evidence.").hexdigest()
+
+
+def test_group_sources_deduplicates_after_sanitization():
+    combined = [
+        _raw(1, "example.com", "Alpha\u200b evidence."),
+        _raw(2, "other.example", "Alpha evidence."),
+    ]
+    assert len(group_sources(combined)) == 1
 
 
 def test_normalize_excerpt_handles_entities_whitespace_and_smart_quotes():

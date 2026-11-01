@@ -9,7 +9,7 @@ from app.api.schemas import (
     VerificationSynthesisPayload,
 )
 from app.core.config import Settings
-from app.core.errors import ProviderTimeoutError
+from app.core.errors import ClientDisconnectedError, ProviderTimeoutError
 from app.db.database import Database
 from app.providers.base import ModelProvider, SearchProvider
 from app.services.verification import VerificationPipeline
@@ -288,6 +288,46 @@ async def test_quarantined_snippet_excluded_from_prompt(db: Database):
     quarantined = [source for source in response.sources if source.is_quarantined]
     assert len(quarantined) == 1
     assert any("quarantined" in note.lower() for note in response.limitations)
+
+
+async def test_publisher_subdomains_cannot_award_supported(db: Database):
+    search = RecordingSearchProvider(
+        [
+            _raw(1, "news.bbc.co.uk", "Alpha evidence."),
+            _raw(2, "sports.bbc.co.uk", "Beta evidence."),
+        ]
+    )
+    model = RecordingModelProvider(_supported_payload())
+    pipeline = VerificationPipeline(
+        db=db, search_provider=search, model_provider=model, settings_obj=_settings()
+    )
+
+    response = await pipeline.verify("Atmospheric CO2 reached 426.9 ppm at Mauna Loa.")
+
+    assert response.public_verdict == "insufficient_evidence"
+    assert any("single source domain" in note.lower() for note in response.limitations)
+
+
+async def test_client_disconnect_aborts_before_synthesis(db: Database):
+    search = RecordingSearchProvider(_two_domain_results())
+    model = RecordingModelProvider(_supported_payload())
+    pipeline = VerificationPipeline(
+        db=db, search_provider=search, model_provider=model, settings_obj=_settings()
+    )
+
+    async def disconnected() -> bool:
+        return True
+
+    with pytest.raises(ClientDisconnectedError):
+        await pipeline.verify(
+            "Atmospheric CO2 reached 426.9 ppm at Mauna Loa.",
+            is_disconnected=disconnected,
+        )
+
+    assert len(search.calls) == 1
+    assert model.calls == []
+    _, total = await db.list_verifications()
+    assert total == 0
 
 
 async def test_policy_adjusted_verdict_is_persisted(db: Database):

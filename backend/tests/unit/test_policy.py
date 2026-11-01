@@ -115,6 +115,16 @@ def test_mixed_requires_both_supporting_and_refuting_sources():
     assert limitations
 
 
+def test_mixed_with_indirect_stances_is_preserved():
+    sources = [
+        _source("src_1", "example.com", "supports", "indirect"),
+        _source("src_2", "reuters.com", "refutes", "indirect"),
+    ]
+    verdict, limitations = apply_verdict_policy(_payload("mixed"), sources)
+    assert verdict == "mixed"
+    assert limitations == []
+
+
 def test_quarantined_sources_are_ignored_by_guardrails():
     sources = [
         _source("src_1", "example.com", "supports", "direct"),

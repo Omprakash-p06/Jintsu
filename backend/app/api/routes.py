@@ -25,7 +25,10 @@ async def create_verification(
     request: Request,
 ) -> VerificationResponse:
     pipeline = request.app.state.pipeline
-    result: VerificationResponse = await pipeline.verify(payload.claim)
+    result: VerificationResponse = await pipeline.verify(
+        payload.claim,
+        is_disconnected=request.is_disconnected,
+    )
     return result
 
 

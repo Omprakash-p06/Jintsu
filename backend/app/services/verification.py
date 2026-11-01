@@ -9,6 +9,7 @@ import html
 import re
 import time
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 from urllib.parse import urlparse
 
@@ -20,7 +21,7 @@ from app.api.schemas import (
     VerificationSynthesisPayload,
 )
 from app.core.config import Settings, settings
-from app.core.errors import ProviderTimeoutError
+from app.core.errors import ClientDisconnectedError, ProviderTimeoutError
 from app.db.database import Database
 from app.providers import get_model_provider, get_search_provider
 from app.providers.base import ModelProvider, SearchProvider
@@ -97,6 +98,22 @@ _CONTROL_CHAR_PATTERN = re.compile(
 )
 _WHITESPACE_PATTERN = re.compile(r"\s+")
 
+_MULTI_PART_SUFFIXES = frozenset(
+    {
+        "co.uk",
+        "org.uk",
+        "ac.uk",
+        "gov.uk",
+        "com.au",
+        "net.au",
+        "co.nz",
+        "co.jp",
+        "com.br",
+        "co.in",
+        "co.za",
+    }
+)
+
 _WIRE_PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"\b(?:Associated Press|AP)\b", re.IGNORECASE), "associated_press"),
     (re.compile(r"\bReuters\b", re.IGNORECASE), "reuters"),
@@ -171,12 +188,28 @@ def _canonical_domain(url: str) -> str:
     return urlparse(url).netloc.lower().removeprefix("www.")
 
 
+def _registrable_domain(host: str) -> str:
+    """Reduce a hostname to its registered domain for source-family clustering.
+
+    Subdomains of one publisher (news.bbc.co.uk, sports.bbc.co.uk) must not count as
+    independent corroboration, so clustering keys on the registrable domain.
+    """
+    if not host:
+        return ""
+    parts = host.split(".")
+    if len(parts) <= 2 or all(part.isdigit() for part in parts):
+        return host
+    if ".".join(parts[-2:]) in _MULTI_PART_SUFFIXES:
+        return ".".join(parts[-3:])
+    return ".".join(parts[-2:])
+
+
 def _resolve_family_id(domain: str, title: str, snippet: str) -> str:
     text = f"{title} {snippet}"
     for pattern, wire_id in _WIRE_PATTERNS:
         if pattern.search(text):
             return wire_id
-    return domain or "unknown"
+    return _registrable_domain(domain) or "unknown"
 
 
 def group_sources(raw_results: list[dict]) -> list[SourceItem]:
@@ -190,9 +223,10 @@ def group_sources(raw_results: list[dict]) -> list[SourceItem]:
         url = str(raw.get("url") or "")
         domain = _canonical_domain(url) or str(raw.get("domain") or "") or "unknown"
         title = str(raw.get("title") or "")
-        content_hash = str(
-            raw.get("content_hash") or hashlib.sha256(snippet.encode()).hexdigest()
-        )
+        # Hash the text that is actually stored, not the provider's raw payload: the
+        # provider hashes pre-sanitization text, which would make content_hash identify
+        # bytes the consumer cannot see and let zero-width variants dodge de-duplication.
+        content_hash = hashlib.sha256(snippet.encode()).hexdigest()
         if content_hash in seen_hashes:
             continue
         seen_hashes.add(content_hash)
@@ -291,6 +325,7 @@ def apply_verdict_policy(
         for source in active
         if source.stance == "supports" and source.relevance in ("direct", "contextual")
     ]
+    any_supports = [source for source in active if source.stance == "supports"]
     any_refutation = [source for source in active if source.stance == "refutes"]
 
     if verdict == "supported":
@@ -306,7 +341,7 @@ def apply_verdict_policy(
         if not direct_refutations:
             verdict = "insufficient_evidence"
             limitations.append(CONTRADICTION_GROUNDING_LIMITATION)
-    elif verdict == "mixed" and not (support and any_refutation):
+    elif verdict == "mixed" and not (any_supports and any_refutation):
         verdict = "insufficient_evidence"
         limitations.append(CONFLICT_GROUNDING_LIMITATION)
 
@@ -339,7 +374,11 @@ class VerificationPipeline:
             else self.settings.REQUEST_DEADLINE_SECONDS
         )
 
-    async def verify(self, claim: str) -> VerificationResponse:
+    async def verify(
+        self,
+        claim: str,
+        is_disconnected: Callable[[], Awaitable[bool]] | None = None,
+    ) -> VerificationResponse:
         start = time.monotonic()
         deadline = start + self.deadline_seconds
 
@@ -373,6 +412,8 @@ class VerificationPipeline:
         if not active:
             return await self._abstain(claim, sources)
 
+        await self._ensure_connected(is_disconnected)
+
         if raw_results and remaining() >= STAGE2_MIN_REMAINING_SECONDS:
             counter_results = list(
                 await self.search_provider.search(
@@ -388,6 +429,8 @@ class VerificationPipeline:
             active = [source for source in sources if not source.is_quarantined]
             if not active:
                 return await self._abstain(claim, sources)
+
+        await self._ensure_connected(is_disconnected)
 
         budget = remaining()
         if budget < MIN_SYNTHESIS_WINDOW_SECONDS:
@@ -429,6 +472,16 @@ class VerificationPipeline:
             sources=sources,
             reasoning=reasoning,
         )
+
+    @staticmethod
+    async def _ensure_connected(
+        is_disconnected: Callable[[], Awaitable[bool]] | None,
+    ) -> None:
+        """Abort before the next paid stage when the client has gone away."""
+        if is_disconnected is None:
+            return
+        if await is_disconnected():
+            raise ClientDisconnectedError()
 
     async def _abstain(self, claim: str, sources: list[SourceItem]) -> VerificationResponse:
         limitations = [EMPTY_EVIDENCE_LIMITATION]

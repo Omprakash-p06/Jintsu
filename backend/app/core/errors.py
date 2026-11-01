@@ -37,6 +37,18 @@ class ProviderUnavailableError(JintruError):
         super().__init__(message, code=code, detail=detail)
 
 
+class ClientDisconnectedError(JintruError):
+    """Raised when the client drops the connection before the pipeline completes."""
+
+    def __init__(
+        self,
+        message: str = "Client disconnected before verification completed",
+        code: str = "CLIENT_DISCONNECTED",
+        detail: str | None = None,
+    ) -> None:
+        super().__init__(message, code=code, detail=detail)
+
+
 class RequestConstraintError(JintruError):
     """Raised when input validation fails (e.g., compound claims or length > 500 chars)."""
 

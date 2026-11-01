@@ -7,6 +7,7 @@ from fastapi import FastAPI
 
 from app.core.config import Settings
 from app.core.errors import (
+    ClientDisconnectedError,
     ProviderTimeoutError,
     ProviderUnavailableError,
     RequestConstraintError,
@@ -48,7 +49,7 @@ class _RaisingPipeline:
     def __init__(self, exc: Exception) -> None:
         self._exc = exc
 
-    async def verify(self, claim: str) -> None:
+    async def verify(self, claim: str, **_kwargs: object) -> None:
         raise self._exc
 
 
@@ -175,6 +176,11 @@ async def test_health_reports_configuration_without_secrets(tmp_path: Path) -> N
         (ProviderTimeoutError("Provider timed out", code="PROVIDER_TIMEOUT"), 504, "PROVIDER_TIMEOUT"),
         (ProviderUnavailableError("Provider down"), 503, "PROVIDER_UNAVAILABLE"),
         (RequestConstraintError("Compound claim rejected"), 422, "REQUEST_CONSTRAINT_ERROR"),
+        (
+            ClientDisconnectedError("Client went away"),
+            499,
+            "CLIENT_DISCONNECTED",
+        ),
     ],
 )
 async def test_domain_errors_map_to_envelopes(
