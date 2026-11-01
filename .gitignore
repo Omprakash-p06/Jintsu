@@ -55,5 +55,10 @@ swe-sweep/
 .swe-sweep/
 .graphicle/
 
+# Planning runtime locks and runtime cache
+.planning/*.lock
+.planning/state.json
+
+
 
 
