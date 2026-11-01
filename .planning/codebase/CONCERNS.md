@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
+last_mapped_commit: 4f658919c9cc583eaac17089285a1e895b404205
 last_mapped_at: 2026-11-02
 ---
 # Codebase Concerns
@@ -31,8 +31,8 @@ last_mapped_at: 2026-11-02
 - **Previous Issue:** No root `.env` file or one-command launcher to start the entire system.
 - **Resolution:**
   - Created `.env.example` and default `.env` at repository root with `USE_MOCK_PROVIDERS=true` default.
-  - Implemented `setup.sh` (one-command setup and smoke tests).
-  - Implemented `start.sh` (one-command full-stack launcher for backend + frontend with graceful process cleanup).
+  - Implemented cross-platform `setup.py` and `run.py` (running natively on Windows, macOS, and Linux).
+  - Implemented POSIX shell wrappers `setup.sh` and `start.sh`.
   - Created `Makefile` (`make setup`, `make dev`, `make test`, `make eval`, `make audit`).
   - Added `docker-compose.yml`, `backend/Dockerfile`, and `frontend/Dockerfile`.
 
@@ -53,6 +53,29 @@ last_mapped_at: 2026-11-02
 - **Previous Issue:** Missing Content Security Policy and HTTP security headers in Next.js configuration.
 - **Resolution:** Added strict security headers (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-DNS-Prefetch-Control: on`) to `frontend/next.config.mjs`.
 - **Verification:** `bash scripts/run_security_audit.sh` passed with 0 findings across Semgrep SAST, pip-audit, and npm audit.
+
+### 7. CI/CD Pipeline Lint & Format Failures (Resolved)
+
+- **Previous Issue:** CI failed during `ruff format --check backend/` on 4 backend files, and `npm --prefix frontend run lint` exited with code 127 (`eslint: not found`).
+- **Resolution:**
+  - Formatted all backend files with Ruff.
+  - Configured ESLint 9 flat configuration (`frontend/eslint.config.mjs`) with `@eslint/js` and `typescript-eslint`.
+  - Updated GitHub Actions workflow (`.github/workflows/ci.yml`) to use `pnpm/action-setup@v4` with pnpm caching across frontend, security, and e2e jobs.
+  - Removed all casual emojis from `README.md` to establish a professional technical specification.
+- **Verification:** All local and CI lint, format, and typecheck commands pass with 0 errors.
+
+### 8. v0 / Vercel Artifacts & Unwired Mock Appearance (Resolved)
+
+- **Previous Issue:** Frontend retained leftover v0 / Vercel logo icons, v0 sandbox `.gitignore` rules, and `/health` reported `brave: missing, meta: missing` under mock mode while `mock.py` returned static `example.com` fixtures for all assertions.
+- **Resolution:**
+  - Designed custom branded Jintru Reality Check SVG logo (`frontend/public/icon.svg`) and generated matching PNG icons (`icon-dark-32x32.png`, `icon-light-32x32.png`, `apple-icon.png`).
+  - Purged `.gitignore` of all v0 internal sandbox files and directories.
+  - Upgraded `MockSearchProvider` and `MockModelProvider` in `backend/app/providers/mock.py` with dynamic, claim-aware mock synthesis while preserving exact contract fixtures for unit tests.
+  - Updated `/health` in `backend/app/api/routes.py` to report `"mock"` state when mock providers are active.
+  - Updated frontend Settings modal and sidebar to recognize mock providers as active and healthy.
+  - Added `http://127.0.0.1:3000` to `ALLOWED_ORIGINS` in `backend/app/main.py`.
+  - Linked topbar "API Docs" directly to backend OpenAPI Swagger docs at `http://localhost:8000/docs`.
+- **Verification:** Frontend build succeeds in 675ms; backend test suite (97/97 tests), eval benchmarks, and security audits pass cleanly.
 
 ---
 

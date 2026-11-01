@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
+last_mapped_commit: 4f658919c9cc583eaac17089285a1e895b404205
 last_mapped_at: 2026-11-02
 ---
 # Testing Patterns
@@ -20,29 +20,31 @@ last_mapped_at: 2026-11-02
 **Run Commands:**
 
 ```bash
-
-# Run all backend unit & integration tests
-
+# Run all backend unit & integration tests (97 tests)
 pytest backend/tests
 
 # Run unit tests only
-
 pytest backend/tests/unit
 
 # Run concurrency & integration tests
-
 pytest backend/tests/integration
 
-# Run offline factuality and SLA benchmark evaluation
+# Check backend code style, formatting, and types
+ruff check backend/ && ruff format --check backend/ && pyright -p backend
 
+# Check frontend lint and typecheck
+pnpm --prefix frontend run lint && pnpm --prefix frontend run typecheck
+
+# Build frontend production bundle
+pnpm --prefix frontend run build
+
+# Run offline factuality and SLA benchmark evaluation (27 cases)
 python evals/run_evals.py --cases evals/cases.jsonl
 
 # Run frontend Playwright E2E tests
-
 pnpm --prefix frontend test:e2e
 
 # Run security SAST & vulnerability audits
-
 bash scripts/run_security_audit.sh
 ```
 

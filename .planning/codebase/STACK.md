@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
+last_mapped_commit: 4f658919c9cc583eaac17089285a1e895b404205
 last_mapped_at: 2026-11-02
 ---
 # Technology Stack
@@ -9,18 +9,18 @@ last_mapped_at: 2026-11-02
 ## Languages
 
 **Primary:**
-- Python `>=3.12` - Backend verification pipeline, API server, database abstraction, provider clients (`backend/pyproject.toml`, `backend/app/`)
+- Python `>=3.11` - Backend verification pipeline, API server, database abstraction, provider clients, cross-platform runners (`backend/pyproject.toml`, `backend/app/`, `setup.py`, `run.py`)
 - TypeScript `5.7.3` - Frontend user interface, API client, workbench application, Playwright end-to-end tests (`frontend/package.json`, `frontend/tsconfig.json`)
 
 **Secondary:**
-- Shell (Bash) - Security audit tooling, CI/CD utility scripts (`scripts/run_security_audit.sh`)
+- Shell (Bash) - Security audit tooling, CI/CD utility scripts (`scripts/run_security_audit.sh`, `setup.sh`, `start.sh`)
 - CSS (Tailwind CSS v4) - UI styling and design system tokens (`frontend/app/globals.css`)
 - JSON / JSONL - Offline evaluation benchmarks, test cases, configuration manifests (`evals/cases.jsonl`, `frontend/components.json`)
 
 ## Runtime
 
 **Environment:**
-- Python 3.12+ (CPython)
+- Python 3.11+ / 3.12+ (CPython)
 - Node.js `>=20` / Node.js 24 runtime support
 - pnpm `9.15.0` package manager for frontend
 

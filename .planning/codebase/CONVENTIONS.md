@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
+last_mapped_commit: 4f658919c9cc583eaac17089285a1e895b404205
 last_mapped_at: 2026-11-02
 ---
 # Coding Conventions
@@ -11,6 +11,7 @@ last_mapped_at: 2026-11-02
 **Files:**
 - Backend: Lowercase snake_case for all modules and test files (`verification.py`, `test_concurrency.py`, `schemas.py`)
 - Frontend: Lowercase camelCase for utilities (`api.ts`, `utils.ts`), PascalCase or lowercase for components (`page.tsx`, `button.tsx`)
+- Cross-platform root runners: Python executable entrypoints (`setup.py`, `run.py`) with thin POSIX shell wrappers (`setup.sh`, `start.sh`)
 
 **Functions:**
 - Backend: Lowercase snake_case (`classify_input`, `group_sources`, `normalize_excerpt`). Private helpers prefixed with single underscore (`_registrable_domain`, `_enforce_synthesis_guard`, `_with_write_retry`).
@@ -27,12 +28,12 @@ last_mapped_at: 2026-11-02
 ## Code Style
 
 **Formatting:**
-- Backend: Managed via Ruff (`ruff>=0.6.0`). Target Python 3.12 (`target-version = "py312"`), line length 100 characters (`line-length = 100` in `backend/pyproject.toml`).
+- Backend: Managed via Ruff (`ruff>=0.6.0`). Target Python 3.12 (`target-version = "py312"`), line length 100 characters (`line-length = 100` in `backend/pyproject.toml`). Enforced via `ruff format --check backend/`.
 - Frontend: Prettier-compatible formatting with 2-space indentation, single quotes, no trailing semicolons.
 
 **Linting:**
 - Backend: Ruff (`ruff check backend/`) with zero warnings tolerated. Pyright strict static type checker (`pyright -p backend`) with zero type errors.
-- Frontend: TypeScript strict mode (`"strict": true` in `frontend/tsconfig.json`), ESLint (`next lint`).
+- Frontend: TypeScript strict mode (`"strict": true` in `frontend/tsconfig.json`), ESLint 9 Flat Config (`npm run lint` via `frontend/eslint.config.mjs`) with zero warnings/errors.
 
 ## Import Organization
 

@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
+last_mapped_commit: 4f658919c9cc583eaac17089285a1e895b404205
 last_mapped_at: 2026-11-02
 ---
 # External Integrations
@@ -29,9 +29,11 @@ last_mapped_at: 2026-11-02
   - Strict Schema Mode: Hardened JSON schema with `additionalProperties: false`, root title removal, and strict required property enforcement
 
 **Mock Fallbacks:**
-- Mock Provider Suite - Offline deterministic testing and local verification without network calls
-  - Implementation: `backend/app/providers/mock.py`
+- Mock Provider Suite - Context-aware simulation and offline deterministic testing without external network calls
+  - Implementation: `backend/app/providers/mock.py` (`MockSearchProvider`, `MockModelProvider`)
+  - Contextual Synthesis: Returns realistic, claim-relevant sources (e.g. NOAA/Reuters for science, AP/Reuters fact checks for refuted assertions) while retaining exact fixtures for contract unit tests
   - Activation: `USE_MOCK_PROVIDERS=true` in environment or settings
+  - Liveness Status: `/api/v1/health` reports `"mock"` state when mock providers are active and keys are empty
 
 ## Data Storage
 
@@ -52,14 +54,15 @@ last_mapped_at: 2026-11-02
   - SQLite database files: `data/jintru.db`, `data/jintru.db-wal`, `data/jintru.db-shm`
 
 **Caching:**
-- None: Real-time claim verification executes fresh multi-stage dialectical retrieval on each evaluation. Source deduplication occurs in-memory per request pipeline via URL and content hash.
+- Query Cache (`backend/app/services/cache.py`): In-memory TTL-based search query caching (`QueryCache`), toggleable via `CACHE_ENABLED` in `.env`. Bypassed during test isolation.
+- Per-Request Deduplication: Source deduplication in-memory per request pipeline via canonical URL and SHA-256 content hash.
 
 ## Authentication & Identity
 
 **Auth Provider:**
 - Custom API Gateway / Zero-Trust API Key Authentication:
   - Outbound: API keys managed via environment variables for Brave Search (`BRAVE_API_KEY`) and Meta AI (`META_API_KEY`).
-  - Inbound Client Access: Unauthenticated local/LAN CORS endpoints (`http://localhost:3000`, `http://localhost:5173`) for frontend workbench (`backend/app/main.py`).
+  - Inbound Client Access: Unauthenticated local/LAN CORS endpoints (`http://localhost:3000`, `http://127.0.0.1:3000`, `http://localhost:5173`, `http://127.0.0.1:5173`, `http://localhost:8000`, `http://127.0.0.1:8000`) for frontend workbench and Swagger docs (`backend/app/main.py`).
 
 ## Monitoring & Observability
 

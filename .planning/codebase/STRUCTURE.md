@@ -1,5 +1,5 @@
 ---
-last_mapped_commit: f58f1905d7983a44dba0aa09255ff203eb536a4f
+last_mapped_commit: 4f658919c9cc583eaac17089285a1e895b404205
 last_mapped_at: 2026-11-02
 ---
 # Codebase Structure
@@ -28,7 +28,7 @@ last_mapped_at: 2026-11-02
 │   │   │   ├── base.py                  # Abstract SearchProvider and ModelProvider
 │   │   │   ├── brave.py                 # Brave Search API integration
 │   │   │   ├── meta.py                  # Meta / OpenAI-compatible LLM client
-│   │   │   └── mock.py                  # Deterministic offline mock providers
+│   │   │   └── mock.py                  # Context-aware and deterministic offline mock providers
 │   │   ├── services/                    # Modular verification services layer
 │   │   │   ├── __init__.py              # Re-exports core verification services
 │   │   │   ├── screening.py             # Gate A conservative pre-retrieval screening
@@ -65,10 +65,16 @@ last_mapped_at: 2026-11-02
 │   │   ├── ui/                          # Shadcn UI primitives
 │   │   │   └── button.tsx               # Accessible button component
 │   │   └── components.json              # Shadcn configuration
+│   ├── public/                          # Branded Jintru assets
+│   │   ├── icon.svg                     # Custom Jintru vector emblem
+│   │   ├── icon-dark-32x32.png          # Dark mode favicon
+│   │   ├── icon-light-32x32.png         # Light mode favicon
+│   │   └── apple-icon.png               # High-res Apple touch icon
 │   ├── lib/                             # Shared frontend utilities and clients
 │   │   ├── api.ts                       # Typed REST client with error envelopes
 │   │   └── utils.ts                     # Tailwind class merging helpers (cn)
 │   ├── package.json                     # Frontend dependencies and npm scripts
+│   ├── eslint.config.mjs                # ESLint 9 flat configuration
 │   ├── playwright.config.ts             # Playwright E2E configuration
 │   ├── postcss.config.mjs               # PostCSS & Tailwind v4 plugin config
 │   ├── next.config.mjs                  # Proxy rewrites and CSP security headers
