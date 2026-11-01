@@ -47,6 +47,8 @@ dist/
 .env
 .env.local
 .env.*.local
+# `lib/` above is a Python packaging rule; the Next.js app keeps real source there.
+!frontend/lib/
 
 # External Tooling & Benchmarks
 swe-sweep/
