@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-11-01T19:19:54Z",
+  "timestamp": "2026-11-01T19:49:20Z",
   "passed": true,
   "metrics": {
     "citation_entailment_precision": 1.0,
@@ -9,10 +9,10 @@
     "overrun_simulation_passed": true
   },
   "latency_distribution_seconds": {
-    "p50": 0.0068,
-    "p90": 0.0078,
-    "p95": 0.0085,
-    "p99": 0.0087
+    "p50": 0.0066,
+    "p90": 0.0077,
+    "p95": 0.0077,
+    "p99": 0.0086
   },
   "case_results": [
     {
@@ -22,7 +22,7 @@
       "verdict": "supported",
       "ground_truth": "supported",
       "match": true,
-      "elapsed_s": 0.0053
+      "elapsed_s": 0.0046
     },
     {
       "case_id": "emp_sup_02",
@@ -31,7 +31,7 @@
       "verdict": "supported",
       "ground_truth": "supported",
       "match": true,
-      "elapsed_s": 0.0075
+      "elapsed_s": 0.006
     },
     {
       "case_id": "emp_sup_03",
@@ -40,7 +40,7 @@
       "verdict": "supported",
       "ground_truth": "supported",
       "match": true,
-      "elapsed_s": 0.0077
+      "elapsed_s": 0.0065
     },
     {
       "case_id": "emp_sup_04",
@@ -49,7 +49,7 @@
       "verdict": "supported",
       "ground_truth": "supported",
       "match": true,
-      "elapsed_s": 0.0055
+      "elapsed_s": 0.0061
     },
     {
       "case_id": "emp_sup_05",
@@ -58,7 +58,7 @@
       "verdict": "supported",
       "ground_truth": "supported",
       "match": true,
-      "elapsed_s": 0.0085
+      "elapsed_s": 0.0059
     },
     {
       "case_id": "emp_sup_06",
@@ -67,7 +67,7 @@
       "verdict": "supported",
       "ground_truth": "supported",
       "match": true,
-      "elapsed_s": 0.0078
+      "elapsed_s": 0.0066
     },
     {
       "case_id": "emp_cnt_01",
@@ -76,7 +76,7 @@
       "verdict": "contradicted",
       "ground_truth": "contradicted",
       "match": true,
-      "elapsed_s": 0.0087
+      "elapsed_s": 0.0077
     },
     {
       "case_id": "emp_cnt_02",
@@ -85,7 +85,7 @@
       "verdict": "contradicted",
       "ground_truth": "contradicted",
       "match": true,
-      "elapsed_s": 0.0077
+      "elapsed_s": 0.0064
     },
     {
       "case_id": "emp_cnt_03",
@@ -94,7 +94,7 @@
       "verdict": "contradicted",
       "ground_truth": "contradicted",
       "match": true,
-      "elapsed_s": 0.0074
+      "elapsed_s": 0.0077
     },
     {
       "case_id": "emp_cnt_04",
@@ -103,7 +103,7 @@
       "verdict": "contradicted",
       "ground_truth": "contradicted",
       "match": true,
-      "elapsed_s": 0.0066
+      "elapsed_s": 0.0051
     },
     {
       "case_id": "emp_cnt_05",
@@ -112,7 +112,7 @@
       "verdict": "contradicted",
       "ground_truth": "contradicted",
       "match": true,
-      "elapsed_s": 0.0068
+      "elapsed_s": 0.0074
     },
     {
       "case_id": "emp_cnt_06",
@@ -121,7 +121,7 @@
       "verdict": "contradicted",
       "ground_truth": "contradicted",
       "match": true,
-      "elapsed_s": 0.0062
+      "elapsed_s": 0.0066
     },
     {
       "case_id": "emp_mix_01",
@@ -130,7 +130,7 @@
       "verdict": "mixed",
       "ground_truth": "mixed",
       "match": true,
-      "elapsed_s": 0.0059
+      "elapsed_s": 0.0073
     },
     {
       "case_id": "emp_mix_02",
@@ -139,7 +139,7 @@
       "verdict": "mixed",
       "ground_truth": "mixed",
       "match": true,
-      "elapsed_s": 0.0066
+      "elapsed_s": 0.0051
     },
     {
       "case_id": "emp_mix_03",
@@ -148,7 +148,7 @@
       "verdict": "mixed",
       "ground_truth": "mixed",
       "match": true,
-      "elapsed_s": 0.0071
+      "elapsed_s": 0.0074
     },
     {
       "case_id": "emp_mix_04",
@@ -157,7 +157,7 @@
       "verdict": "mixed",
       "ground_truth": "mixed",
       "match": true,
-      "elapsed_s": 0.0068
+      "elapsed_s": 0.0069
     },
     {
       "case_id": "emp_mix_05",
@@ -166,7 +166,7 @@
       "verdict": "mixed",
       "ground_truth": "mixed",
       "match": true,
-      "elapsed_s": 0.0077
+      "elapsed_s": 0.0086
     },
     {
       "case_id": "emp_abs_01",
@@ -175,7 +175,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "insufficient_evidence",
       "match": true,
-      "elapsed_s": 0.0051
+      "elapsed_s": 0.006
     },
     {
       "case_id": "emp_abs_02",
@@ -184,7 +184,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "insufficient_evidence",
       "match": true,
-      "elapsed_s": 0.0067
+      "elapsed_s": 0.0063
     },
     {
       "case_id": "emp_abs_03",
@@ -193,7 +193,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "insufficient_evidence",
       "match": true,
-      "elapsed_s": 0.007
+      "elapsed_s": 0.0044
     },
     {
       "case_id": "emp_abs_04",
@@ -202,7 +202,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "insufficient_evidence",
       "match": true,
-      "elapsed_s": 0.0052
+      "elapsed_s": 0.0067
     },
     {
       "case_id": "subj_01",
@@ -211,7 +211,7 @@
       "verdict": "not_verifiable",
       "ground_truth": "not_verifiable",
       "match": true,
-      "elapsed_s": 0.0069
+      "elapsed_s": 0.0073
     },
     {
       "case_id": "subj_02",
@@ -220,7 +220,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "not_verifiable",
       "match": false,
-      "elapsed_s": 0.0073
+      "elapsed_s": 0.0044
     },
     {
       "case_id": "fut_01",
@@ -229,7 +229,7 @@
       "verdict": "not_verifiable",
       "ground_truth": "not_verifiable",
       "match": true,
-      "elapsed_s": 0.0068
+      "elapsed_s": 0.0075
     },
     {
       "case_id": "fut_02",
@@ -238,7 +238,7 @@
       "verdict": "not_verifiable",
       "ground_truth": "not_verifiable",
       "match": true,
-      "elapsed_s": 0.0066
+      "elapsed_s": 0.0071
     },
     {
       "case_id": "inj_01",
@@ -247,7 +247,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "insufficient_evidence",
       "match": true,
-      "elapsed_s": 0.0076
+      "elapsed_s": 0.0074
     },
     {
       "case_id": "inj_02",
@@ -256,7 +256,7 @@
       "verdict": "insufficient_evidence",
       "ground_truth": "insufficient_evidence",
       "match": true,
-      "elapsed_s": 0.0056
+      "elapsed_s": 0.006
     }
   ]
 }

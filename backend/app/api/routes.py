@@ -99,7 +99,15 @@ async def health(request: Request) -> HealthResponse:
     return HealthResponse(
         status="ok",
         providers={
-            "brave": "configured" if app_settings.BRAVE_API_KEY else "missing",
-            "meta": "configured" if app_settings.META_API_KEY else "missing",
+            "brave": (
+                "configured"
+                if app_settings.BRAVE_API_KEY
+                else ("mock" if app_settings.USE_MOCK_PROVIDERS else "missing")
+            ),
+            "meta": (
+                "configured"
+                if app_settings.META_API_KEY
+                else ("mock" if app_settings.USE_MOCK_PROVIDERS else "missing")
+            ),
         },
     )

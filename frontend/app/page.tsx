@@ -541,6 +541,7 @@ export default function Page() {
     <div className={dark ? 'app dark' : 'app'}>
       <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${mobileNav ? 'mobile-open' : ''}`}>
         <div className="brand">
+          <ShieldCheck size={20} className="brand-logo" />
           {!collapsed && <span className="brand-name">jintru</span>}
           <button className="mobile-close icon-btn" onClick={() => setMobileNav(false)} aria-label="Close navigation">
             <X size={18} />
@@ -601,9 +602,15 @@ export default function Page() {
             <strong>Verify a claim</strong>
           </div>
           <div className="top-actions">
-            <button className="top-link">
-              Documentation <ArrowUpRight size={14} />
-            </button>
+            <a
+              className="top-link"
+              href="http://localhost:8000/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Interactive API Documentation"
+            >
+              API Docs <ArrowUpRight size={14} />
+            </a>
             <button
               className="theme-toggle icon-btn"
               onClick={() => setDark(!dark)}
@@ -614,7 +621,7 @@ export default function Page() {
             <button ref={settingsTriggerRef} className="icon-btn" onClick={() => setShowSettings(true)} aria-label="Open settings">
               <Settings2 size={17} />
             </button>
-            <div className="avatar">OM</div>
+            <div className="avatar" title="Reality Check AI Workbench">RC</div>
           </div>
         </header>
         <div className="content">
@@ -663,7 +670,7 @@ export default function Page() {
               onKeyDown={(event) => {
                 if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') void verify()
               }}
-              placeholder="Example: Atmospheric CO2 reached 426.9 ppm at Mauna Loa in May 2024."
+              placeholder="Enter a statement to evaluate (e.g., Atmospheric CO2 reached 426.9 ppm at Mauna Loa in May 2024)..."
               disabled={loading}
               aria-describedby="claim-counter"
             />
@@ -974,14 +981,17 @@ export default function Page() {
               </div>
               <span className="provider-list">
                 {providers.length ? (
-                  providers.map(([name, state]) => (
-                    <span
-                      className={state === 'configured' ? 'provider-status' : 'provider-status missing'}
-                      key={name}
-                    >
-                      <span className="status-dot" /> {name}: {state}
-                    </span>
-                  ))
+                  providers.map(([name, state]) => {
+                    const isOk = state === 'configured' || state === 'mock'
+                    return (
+                      <span
+                        className={isOk ? 'provider-status' : 'provider-status missing'}
+                        key={name}
+                      >
+                        <span className="status-dot" /> {name}: {state}
+                      </span>
+                    )
+                  })
                 ) : (
                   <span className="provider-status missing">
                     <span className="status-dot" /> unavailable
