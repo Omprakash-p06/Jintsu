@@ -133,26 +133,23 @@ jobs:
           pnpm --prefix frontend install
           npx --prefix frontend playwright install --with-deps chromium firefox
 
-      - name: Start FastAPI Backend
-        run: |
-          uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 &
-          sleep 2
-        working-directory: backend
-        env:
-          USE_MOCK_PROVIDERS: "true"
-
-      - name: Start Next.js Frontend
-        run: |
-          pnpm run build
-          pnpm run start -- -p 3000 &
-          sleep 3
-        working-directory: frontend
+      - name: Build Next.js Frontend
+        run: pnpm --prefix frontend run build
         env:
           JINTRU_API_URL: "http://127.0.0.1:8000"
 
       - name: Run Playwright Tests
-        run: pnpm run test:e2e
-        working-directory: frontend
+        run: pnpm --prefix frontend run test:e2e
         env:
           PLAYWRIGHT_TEST_BASE_URL: "http://127.0.0.1:3000"
+          USE_MOCK_PROVIDERS: "true"
+          JINTRU_API_URL: "http://127.0.0.1:8000"
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
 
