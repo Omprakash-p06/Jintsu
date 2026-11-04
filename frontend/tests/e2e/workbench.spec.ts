@@ -31,7 +31,7 @@ test.describe('Reality Check AI Workbench E2E Journeys', () => {
     // Wait for the result section to render
     const verdictSection = page.locator('.verdict-card')
     await expect(verdictSection).toBeVisible({ timeout: 15_000 })
-    await expect(page.locator('.verdict-badge')).toBeVisible()
+    await expect(verdictSection.locator('.verdict-badge')).toBeVisible()
 
     // 5. Dynamic Relationship Graph & Source Evidence Grid
     await expect(page.locator('.graph')).toBeVisible()
@@ -61,7 +61,7 @@ test.describe('Reality Check AI Workbench E2E Journeys', () => {
     // 8. History Drawer Persistence
     const historySection = page.locator('#history')
     await expect(historySection).toBeVisible()
-    await expect(historySection.locator('.history-item')).toBeVisible()
+    await expect(historySection.locator('.history-item').first()).toBeVisible()
   })
 
   test('CUJ 3: Abstention on subjective assertion and absent evidence', async ({ page }) => {
@@ -74,7 +74,7 @@ test.describe('Reality Check AI Workbench E2E Journeys', () => {
 
     const verdictCard = page.locator('.verdict-card')
     await expect(verdictCard).toBeVisible({ timeout: 10_000 })
-    const badge = page.locator('.verdict-badge')
+    const badge = verdictCard.locator('.verdict-badge')
     await expect(badge).toContainText(/Not Verifiable/i)
 
     // 2. Limitations Accordion ("What remains unknown")
