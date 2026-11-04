@@ -52,10 +52,10 @@ test.describe('Reality Check AI Workbench E2E Journeys', () => {
     }
 
     // 7. Copy Report Interaction
-    const copyReportBtn = page.getByRole('button', { name: /copy report/i })
+    const copyReportBtn = page.getByTestId('copy-report-btn').or(page.getByRole('button', { name: /copy report/i }))
     if (await copyReportBtn.isVisible()) {
       await copyReportBtn.click()
-      await expect(copyReportBtn).toContainText(/copied/i)
+      await expect(page.getByTestId('copy-report-btn')).toContainText(/copied/i)
     }
 
     // 8. History Drawer Persistence

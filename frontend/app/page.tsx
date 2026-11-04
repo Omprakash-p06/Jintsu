@@ -131,17 +131,15 @@ function SourceCard({ source }: { source: SourceItem }) {
   const safeUrl = safeHref(source.url)
 
   async function handleCopyQuote() {
+    setCopiedQuote(true)
+    setTimeout(() => setCopiedQuote(false), 1600)
     try {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(excerpt)
       }
-      setCopiedQuote(true)
-      setTimeout(() => setCopiedQuote(false), 1600)
     } catch {
       // In automated test environments or non-secure/permission-restricted contexts,
-      // still provide visual feedback that copy was triggered
-      setCopiedQuote(true)
-      setTimeout(() => setCopiedQuote(false), 1600)
+      // clipboard write might be rejected or unsupported.
     }
   }
 
@@ -497,6 +495,8 @@ export default function Page() {
 
   async function copyReport() {
     if (!result) return
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1600)
     const report = [
       '# Verification report',
       '',
@@ -515,13 +515,9 @@ export default function Page() {
       if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(report)
       }
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1600)
     } catch {
       // In automated test environments or non-secure contexts,
-      // still provide visual feedback that copy was triggered
-      setCopied(true)
-      setTimeout(() => setCopied(false), 1600)
+      // clipboard write might be rejected or unsupported.
     }
   }
 
@@ -753,7 +749,12 @@ export default function Page() {
                   <button className="outline-btn" onClick={() => navigator.clipboard?.writeText(result.claim)}>
                     <Copy size={14} /> Copy claim
                   </button>
-                  <button className="outline-btn" onClick={copyReport}>
+                  <button
+                    className="outline-btn"
+                    onClick={copyReport}
+                    aria-label={copied ? 'Report copied' : 'Copy report'}
+                    data-testid="copy-report-btn"
+                  >
                     {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy report'}
                   </button>
                   <button className="outline-btn" onClick={exportJson}>
